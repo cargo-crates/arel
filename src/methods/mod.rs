@@ -1,9 +1,9 @@
 use std::any::type_name;
 use inflector::{string::{demodulize, pluralize}, cases::snakecase};
 
-pub fn table_name<T>() -> String where T: ?Sized {
+pub fn table_name<M>() -> String where M: ?Sized {
     // eg: arel::UserTable
-    let full_namespace = type_name::<T>();
+    let full_namespace = type_name::<M>();
     // eg: UserTable
     let struct_name = demodulize::demodulize(&full_namespace);
     // eg: user_table

@@ -4,30 +4,34 @@ pub use select_core::SelectCore;
 use serde_json::{Value as Json, json};
 use crate::nodes::statements::StatementsType;
 use std::default::Default;
+use crate::traits::ModelAble;
+use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]
-pub struct SelectStatement {
-    pub cores: Vec<SelectCore>,
-    orders: Vec<StatementsType>,
-    limit: Option<StatementsType>,
-    lock: Option<StatementsType>,
-    offset: Option<StatementsType>,
-    with: Option<StatementsType>
+pub struct SelectStatement<M: ModelAble> {
+    pub cores: Vec<SelectCore<M>>,
+    orders: Vec<StatementsType<M>>,
+    limit: Option<StatementsType<M>>,
+    lock: Option<StatementsType<M>>,
+    offset: Option<StatementsType<M>>,
+    with: Option<StatementsType<M>>,
+    _marker: PhantomData<M>,
 }
 
-impl Default for SelectStatement {
+impl<M> Default for SelectStatement<M> where M: ModelAble {
     fn default() -> Self {
         Self {
-            cores: vec![SelectCore::default()],
+            cores: vec![SelectCore::<M>::default()],
             orders: vec![],
             limit: None,
             lock: None,
             offset: None,
             with: None,
+            _marker: PhantomData,
         }
     }
 }
 
-impl SelectStatement {
+impl<M> SelectStatement<M> where M: ModelAble {
 
 }

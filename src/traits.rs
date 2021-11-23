@@ -21,7 +21,7 @@ pub trait ModelAble: Sized {
         Table::<Self>::table_name()
     }
     fn table() -> Table<Self> {
-        Table::new()
+        Table::<Self>::new()
     }
     fn r#where(condition: Json) -> Table<Self> {
         let mut table = Self::table();

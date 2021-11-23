@@ -4,9 +4,9 @@ pub struct SqlLiteral {
 }
 
 impl SqlLiteral {
-    pub fn new(raw_sql: &str) -> Self {
+    pub fn new(raw_sql: String) -> Self {
         Self {
-            raw_sql: raw_sql.to_string(),
+            raw_sql: raw_sql,
         }
     }
 }
@@ -16,7 +16,7 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let sql_literal = SqlLiteral::new("length(title)");
-        assert_eq!(sql_literal.raw_sql, "length(title)");
+        let sql_literal = SqlLiteral::new("length(title)".to_string());
+        assert_eq!(sql_literal.raw_sql, "length(title)".to_string());
     }
 }

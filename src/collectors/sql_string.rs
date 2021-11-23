@@ -1,7 +1,7 @@
 #[derive(Clone, Debug)]
 pub struct SqlString {
     bind_index: usize,
-    value: String,
+    pub value: String,
 }
 
 impl SqlString {

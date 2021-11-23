@@ -7,12 +7,12 @@ use crate::traits::ModelAble;
 use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]
-pub struct Table<T: ModelAble> {
-    pub select_manager: SelectManager,
-    _marker: PhantomData<T>
+pub struct Table<M: ModelAble> {
+    pub select_manager: SelectManager<M>,
+    _marker: PhantomData<M>,
 }
 
-impl<T> Table<T> where T: ModelAble {
+impl<M> Table<M> where M: ModelAble {
     /// Get Model's table name.
     ///
     /// # Examples
@@ -27,11 +27,11 @@ impl<T> Table<T> where T: ModelAble {
     /// assert_eq!(User::table_name(), "users");
     /// ```
     pub fn table_name() -> String {
-        table_name::<T>()
+        table_name::<M>()
     }
     pub fn new() -> Self {
         Self {
-            select_manager: SelectManager::default(),
+            select_manager: SelectManager::<M>::default(),
             _marker: PhantomData
         }
     }
