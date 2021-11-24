@@ -1,5 +1,7 @@
 pub mod select_manager;
+pub mod select_statement;
 pub use select_manager::SelectManager;
+pub use select_statement::SelectStatement;
 
 use serde_json::{Value as Json, json};
 use crate::methods::table_name;

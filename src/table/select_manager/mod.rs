@@ -1,5 +1,7 @@
 use serde_json::{Value as Json, json};
-use crate::nodes::{ SqlLiteral, And, select_statement::{SelectStatement, SelectCore} };
+use crate::table::select_statement::{SelectStatement, SelectCore};
+use crate::statements::{StatementAble, helpers::and};
+use crate::nodes::{SqlLiteral};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -35,7 +37,7 @@ impl<M> SelectManager<M> where M: ModelAble {
         if self.ctx().r#wheres.len() == 0 {
             None
         } else {
-            Some(SqlLiteral::new(format!("WHERE {}", And::<M>::new(&ctx.r#wheres).to_sql())))
+            Some(SqlLiteral::new(format!("WHERE {}", and::to_sql(&ctx.r#wheres))))
         }
     }
 }

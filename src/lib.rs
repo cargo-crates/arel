@@ -2,6 +2,7 @@ pub mod methods;
 pub mod traits;
 pub mod collectors;
 pub mod nodes;
+pub mod statements;
 pub mod table;
 
 pub use nodes::{SqlLiteral};
