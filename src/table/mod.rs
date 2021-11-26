@@ -4,9 +4,13 @@ pub use select_manager::SelectManager;
 pub use select_statement::SelectStatement;
 
 use serde_json::{Value as Json, json};
-use crate::methods::table_name;
+use crate::methods::{type_to_pluralize_string};
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
+use crate::collectors::SqlString;
+use crate::table::select_statement::SelectCore;
+use crate::visitors;
+// pub trait ManagerStatement<M: ModelAble> {}
 
 #[derive(Clone, Debug)]
 pub struct Table<M: ModelAble> {
@@ -29,7 +33,7 @@ impl<M> Table<M> where M: ModelAble {
     /// assert_eq!(User::table_name(), "users");
     /// ```
     pub fn table_name() -> String {
-        table_name::<M>()
+        type_to_pluralize_string::<M>()
     }
     pub fn new() -> Self {
         Self {
@@ -40,6 +44,11 @@ impl<M> Table<M> where M: ModelAble {
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
         self.select_manager.r#where(condition);
         self
+    }
+    pub fn to_sql(&self) -> String {
+        let mut collector = SqlString::default();
+        visitors::accept_select_manager(&self.select_manager, &mut collector);
+        collector.value
     }
 }
 

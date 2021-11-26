@@ -3,6 +3,7 @@ use crate::statements::StatementAble;
 
 use crate::nodes::SqlLiteral;
 use crate::traits::ModelAble;
+use crate::methods;
 use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]
@@ -21,7 +22,7 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
         match self.value() {
             Json::Object(json_object) => {
                 for column_name in json_object.keys() {
-                    let table_column_name = M::table_column_name(column_name);
+                    let table_column_name = methods::table_column_name::<M>(column_name);
                     let json_value = json_object.get(column_name).unwrap();
                     vec.push(SqlLiteral::new(format!("{} {}", table_column_name, self.json_value_sql(json_value, true))));
                 }

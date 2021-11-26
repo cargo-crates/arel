@@ -12,3 +12,14 @@ impl Default for SqlString {
         }
     }
 }
+
+impl SqlString {
+    pub fn push(&mut self, char: char) -> &mut Self {
+        self.value.push(char);
+        self
+    }
+    pub fn push_str(&mut self, sub_str: &str) -> &mut Self {
+        self.value.push_str(sub_str);
+        self
+    }
+}

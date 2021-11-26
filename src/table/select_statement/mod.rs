@@ -5,6 +5,7 @@ use serde_json::{Value as Json, json};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
+// use crate::table::ManagerStatement;
 
 #[derive(Clone, Debug)]
 pub struct SelectStatement<M: ModelAble> {
@@ -16,6 +17,8 @@ pub struct SelectStatement<M: ModelAble> {
     // with: Option<StatementsType<M>>,
     _marker: PhantomData<M>,
 }
+
+// impl<M> ManagerStatement<M> for SelectStatement<M> where M: ModelAble {}
 
 impl<M> Default for SelectStatement<M> where M: ModelAble {
     fn default() -> Self {

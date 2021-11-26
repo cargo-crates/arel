@@ -4,6 +4,7 @@ pub mod collectors;
 pub mod nodes;
 pub mod statements;
 pub mod table;
+pub mod visitors;
 
 pub use nodes::{SqlLiteral};
 

@@ -1,7 +1,16 @@
-# arel
+# Arel &emsp; [![Latest Version]][crates.io]
 
----
-参考资料
+[Latest Version]: https://img.shields.io/crates/v/arel.svg
+[crates.io]: https://crates.io/crates/arel
 
-- https://github.com/rails/rails/blob/83217025a1/activerecord/lib/arel/table.rb
-- https://github.com/cargo-crates/orm-rs/blob/main/src/builders/query_builder.rs
+```rust
+use arel::traits::ModelAble;
+use serde_json::json;
+
+#[derive(Clone, Debug)]
+struct User {}
+impl ModelAble for User {}
+
+let sql = User::query().r#where(json!({"name": "Tom"})).r#where(json!(["active = ?", true])).to_sql();
+assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1");
+```

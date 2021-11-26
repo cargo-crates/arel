@@ -32,12 +32,7 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().r#where(condition);
         self
     }
-    pub fn get_where_sql(&self) -> Option<SqlLiteral> {
-        let ctx = self.ctx();
-        if self.ctx().r#wheres.len() == 0 {
-            None
-        } else {
-            Some(SqlLiteral::new(format!("WHERE {}", and::to_sql(&ctx.r#wheres))))
-        }
-    }
+    // pub fn get_where_sql(&self) -> Option<SqlLiteral> {
+    //     self.ctx().get_where_sql()
+    // }
 }
