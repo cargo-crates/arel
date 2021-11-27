@@ -10,8 +10,17 @@ impl ModelAble for User {}
 mod query {
     use super::*;
     #[test]
-    fn test_where() {
-        let sql = User::query().r#where(json!({"name": "Tom"})).r#where(json!(["active = ?", true])).to_sql();
+    fn test_query() {
+        let sql = User::query()
+            .r#where(json!({"name": "Tom"}))
+            .r#where(json!(["active = ?", true]))
+            .to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1");
+
+        let sql = User::query()
+            .joins(json!("left join orders on users.id = orders.user_id"))
+            .r#where(json!({"name": "Tom"}))
+            .to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` left join orders on users.id = orders.user_id WHERE `users`.`name` = 'Tom'");
     }
 }

@@ -1,7 +1,6 @@
 pub mod select_core;
 pub use select_core::SelectCore;
 
-use serde_json::{Value as Json, json};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;

@@ -1,7 +1,6 @@
 pub mod and;
 
 use crate::statements::{StatementAble};
-use serde_json::{Value as Json};
 use crate::collectors::{SqlString};
 use crate::traits::ModelAble;
 

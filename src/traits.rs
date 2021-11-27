@@ -1,4 +1,3 @@
-use serde_json::{Value as Json, json};
 use crate::table::Table;
 
 /// Get Model's table name.
@@ -17,6 +16,8 @@ use crate::table::Table;
 /// assert_eq!(Order::table_name(), "orders");
 /// ```
 pub trait ModelAble: Sized {
+    fn id() -> &'static str { Self::primary_key() }
+    fn primary_key() -> &'static str { "id" }
     fn table_name() -> String {
         Table::<Self>::table_name()
     }
@@ -24,7 +25,6 @@ pub trait ModelAble: Sized {
         Table::<Self>::new()
     }
     fn query() -> Table<Self> {
-        let mut table = Self::table();
-        table
+        Self::table()
     }
 }

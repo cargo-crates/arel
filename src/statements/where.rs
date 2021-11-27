@@ -1,6 +1,5 @@
-use serde_json::{Value as Json, json};
+use serde_json::{Value as Json};
 use crate::statements::StatementAble;
-
 use crate::nodes::SqlLiteral;
 use crate::traits::ModelAble;
 use crate::methods;
@@ -53,7 +52,7 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
         vec
     }
     fn to_sql(&self) -> String {
-        self.to_sql_literals().into_iter().map(|sql_literal| sql_literal.raw_sql).collect::<Vec<String>>().join(&format!("{}", " AND "))
+        self.to_sql_with_concat(" AND ")
     }
 }
 
@@ -117,6 +116,7 @@ impl<M> Where<M> where M: ModelAble {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::{json};
     #[test]
     fn to_sql() {
         #[derive(Clone, Debug)]

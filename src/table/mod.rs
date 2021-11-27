@@ -3,12 +3,11 @@ pub mod select_statement;
 pub use select_manager::SelectManager;
 pub use select_statement::SelectStatement;
 
-use serde_json::{Value as Json, json};
+use serde_json::{Value as Json};
 use crate::methods::{type_to_pluralize_string};
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
 use crate::collectors::SqlString;
-use crate::table::select_statement::SelectCore;
 use crate::visitors;
 // pub trait ManagerStatement<M: ModelAble> {}
 
@@ -40,6 +39,10 @@ impl<M> Table<M> where M: ModelAble {
             select_manager: SelectManager::<M>::default(),
             _marker: PhantomData
         }
+    }
+    pub fn joins(&mut self, condition: Json) -> &mut Self {
+        self.select_manager.joins(condition);
+        self
     }
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
         self.select_manager.r#where(condition);

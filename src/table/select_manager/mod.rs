@@ -1,7 +1,5 @@
-use serde_json::{Value as Json, json};
+use serde_json::{Value as Json};
 use crate::table::select_statement::{SelectStatement, SelectCore};
-use crate::statements::{StatementAble, helpers::and};
-use crate::nodes::{SqlLiteral};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -25,8 +23,12 @@ impl<M> SelectManager<M> where M: ModelAble {
     fn ctx_mut(&mut self) -> &mut SelectCore<M> {
         self.ast.cores.last_mut().unwrap()
     }
-    fn ctx(&self) -> &SelectCore<M> {
-        self.ast.cores.last().unwrap()
+    // fn ctx(&self) -> &SelectCore<M> {
+    //     self.ast.cores.last().unwrap()
+    // }
+    pub fn joins(&mut self, condition: Json) -> &mut Self {
+        self.ctx_mut().joins(condition);
+        self
     }
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
         self.ctx_mut().r#where(condition);

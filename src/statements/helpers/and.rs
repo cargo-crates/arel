@@ -1,6 +1,6 @@
 use crate::collectors::{SqlString};
 use crate::traits::ModelAble;
-use crate::statements::{StatementAble, Where, helpers};
+use crate::statements::{StatementAble, helpers};
 
 pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> String {
     let mut collector = SqlString::default();
@@ -11,7 +11,8 @@ pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::{Value as Json, json};
+    use serde_json::{json};
+    use crate::statements::Where;
     #[test]
     fn to_sql() {
         #[derive(Clone, Debug)]
