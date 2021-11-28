@@ -1,10 +1,11 @@
 pub mod select_manager;
-pub mod select_statement;
+pub mod update_manager;
 pub use select_manager::SelectManager;
-pub use select_statement::SelectStatement;
+pub use select_manager::select_statement::SelectStatement;
+pub use update_manager::UpdateManager;
 
-use serde_json::{Value as Json};
-use crate::methods::{type_to_pluralize_string};
+use serde_json::Value as Json;
+use crate::methods::type_to_pluralize_string;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
 use crate::collectors::SqlString;
@@ -13,7 +14,8 @@ use crate::visitors;
 
 #[derive(Clone, Debug)]
 pub struct Table<M: ModelAble> {
-    pub select_manager: SelectManager<M>,
+    pub select_manager: Option<SelectManager<M>>,
+    pub update_manager: Option<UpdateManager<M>>,
     _marker: PhantomData<M>,
 }
 
@@ -36,21 +38,52 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn new() -> Self {
         Self {
-            select_manager: SelectManager::<M>::default(),
+            select_manager: None,
+            update_manager: None,
             _marker: PhantomData
         }
     }
+    pub fn with_select_manager(&mut self) -> &mut Self {
+        self.select_manager = Some(SelectManager::<M>::default());
+        self
+    }
+    pub fn with_update_manager(&mut self) -> &mut Self {
+        self.update_manager = Some(UpdateManager::<M>::default());
+        self
+    }
     pub fn joins(&mut self, condition: Json) -> &mut Self {
-        self.select_manager.joins(condition);
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.joins(condition);
+        } else {
+            panic!("Not support");
+        }
         self
     }
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
-        self.select_manager.r#where(condition);
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.r#where(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn update(&mut self, condition: Json) -> &mut Self {
+        if let Some(update_manager) = &mut self.update_manager {
+            update_manager.update(condition);
+        } else {
+            panic!("Not support");
+        }
         self
     }
     pub fn to_sql(&self) -> String {
         let mut collector = SqlString::default();
-        visitors::accept_select_manager(&self.select_manager, &mut collector);
+        if let Some(select_manager) = &self.select_manager {
+            visitors::accept_select_manager(select_manager, &mut collector);
+        } else if let Some(update_manager) = &self.update_manager {
+            visitors::accept_update_manager(update_manager, &mut collector);
+        } else {
+            panic!("Not support");
+        }
         collector.value
     }
 }

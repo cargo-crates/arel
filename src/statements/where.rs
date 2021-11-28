@@ -43,10 +43,10 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
                         }).collect::<String>();
                     vec.push(SqlLiteral::new(raw_sql));
                 } else {
-                    panic!("Error: 类型不支持, 第一个元素必须为字符串")
+                    panic!("Error:Not Support, 第一个元素必须为字符串")
                 }
             }
-            _ => ()
+            _ => panic!("Error: Not Support!")
         }
         // Ok(vec.join(" AND "))
         vec

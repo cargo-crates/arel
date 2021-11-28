@@ -23,4 +23,11 @@ mod query {
             .to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` left join orders on users.id = orders.user_id WHERE `users`.`name` = 'Tom'");
     }
+    #[test]
+    fn test_update() {
+        let sql = User::update_all(json!({
+            "name": "Tom"
+        })).to_sql();
+        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom'");
+    }
 }

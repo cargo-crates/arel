@@ -1,8 +1,11 @@
 pub mod helpers;
 pub mod r#where;
 pub mod join;
+pub mod update;
+
 pub use r#where::Where;
 pub use join::Join;
+pub use update::Update;
 
 
 use serde_json::{Value as Json};
@@ -31,10 +34,10 @@ pub trait StatementAble<M: ModelAble> {
                         }).collect::<String>();
                     vec.push(SqlLiteral::new(raw_sql));
                 } else {
-                    panic!("Error: 类型不支持, 第一个元素必须为字符串")
+                    panic!("Error:  Not Support, 第一个元素必须为字符串")
                 }
             }
-            _ => ()
+            _ => panic!("Error: Not Support!")
         }
         // Ok(vec.join(" AND "))
         vec
@@ -62,7 +65,7 @@ pub trait StatementAble<M: ModelAble> {
                 let value = if *json_bool {1} else {0};
                 format!("{}", value)
             },
-            // Json::Null => { panic!("Error: Not Support") },
+            Json::Null => { format!("{}", "null") },
             _ => panic!("Error: Not Support")
         }
         // match json_value {

@@ -1,3 +1,4 @@
+use serde_json::{Value as Json};
 use crate::table::Table;
 
 /// Get Model's table name.
@@ -25,6 +26,13 @@ pub trait ModelAble: Sized {
         Table::<Self>::new()
     }
     fn query() -> Table<Self> {
-        Self::table()
+        let mut table = Self::table();
+        table.with_select_manager();
+        table
+    }
+    fn update_all(condition: Json) -> Table<Self> {
+        let mut table = Self::table();
+        table.with_update_manager().update(condition);
+        table
     }
 }

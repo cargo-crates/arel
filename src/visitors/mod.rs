@@ -3,7 +3,11 @@ pub mod mysql;
 use crate::methods::{quote_table_name, table_column_name};
 use crate::traits::ModelAble;
 use crate::collectors::SqlString;
-use crate::table::{SelectManager, select_statement::{SelectStatement, SelectCore}};
+use crate::table::{
+    SelectManager,
+    update_manager::{UpdateManager, UpdateStatement}
+};
+use crate::table::select_manager::select_statement::{SelectCore, SelectStatement};
 
 pub fn accept_select_manager<'a, M: ModelAble>(select_manager: &'a SelectManager<M>, collector: &'a mut SqlString) -> &'a mut SqlString {
     let ast: &SelectStatement<M> = &select_manager.ast;
@@ -30,5 +34,18 @@ fn visit_arel_select_core<'a, M: ModelAble>(core: &'a SelectCore<M>, collector: 
     // core.groups
     // core.havings
     // core.groups
+    collector
+}
+
+pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager<M>, collector: &'a mut SqlString) -> &'a mut SqlString {
+    let ast: &UpdateStatement<M> = &update_manager.ast;
+    collector.push_str("UPDATE ");
+    collector.push_str(&quote_table_name(&M::table_name()));
+    collector.push_str(" SET ");
+
+    if let Some(sql_literal) = ast.get_update_sql() {
+        collector.push_str(&sql_literal.raw_sql);
+    }
+
     collector
 }

@@ -1,8 +1,11 @@
-use serde_json::{Value as Json};
-use crate::table::select_statement::{SelectStatement, SelectCore};
+pub mod select_statement;
+pub use select_statement::SelectStatement;
+
+use serde_json::Value as Json;
 use std::default::Default;
-use crate::traits::ModelAble;
 use std::marker::PhantomData;
+use crate::traits::ModelAble;
+use select_statement::SelectCore;
 
 #[derive(Debug, Clone)]
 pub struct SelectManager<M: ModelAble> {
