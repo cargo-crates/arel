@@ -21,7 +21,7 @@ impl<M> StatementAble<M> for Join<M> where M: ModelAble {
             Json::String(json_string) => {
                 format!("{}", json_string)
             },
-            _ => StatementAble::json_value_sql(self, json_value)
+            _ => StatementAble::json_value_sql_default(self, json_value)
         }
     }
 }
@@ -45,12 +45,12 @@ mod tests {
         struct User {}
         impl ModelAble for User {}
 
-        let join = Join::<User>::new(json!("left joins orders on users.id = orders.user_id"));
-        assert_eq!(join.to_sql(), "left joins orders on users.id = orders.user_id");
+        let join = Join::<User>::new(json!("LEFT JOINS orders ON users.id = orders.user_id"));
+        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id");
 
-        let join = Join::<User>::new(json!(["left joins orders on users.id = orders.user_id"]));
-        assert_eq!(join.to_sql(), "left joins orders on users.id = orders.user_id");
-        let join = Join::<User>::new(json!(["left joins ? on users.id = ?", "orders", "orders.user_id"]));
-        assert_eq!(join.to_sql(), "left joins orders on users.id = orders.user_id");
+        let join = Join::<User>::new(json!(["LEFT JOINS orders ON users.id = orders.user_id"]));
+        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id");
+        let join = Join::<User>::new(json!(["LEFT JOINS ? ON users.id = ? AND users.age = ?", "orders", "orders.user_id", 18]));
+        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id AND users.age = 18");
     }
 }
