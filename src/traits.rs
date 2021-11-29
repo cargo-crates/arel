@@ -32,7 +32,7 @@ pub trait ModelAble: Sized {
     }
     fn update_all(condition: Json) -> Table<Self> {
         let mut table = Self::table();
-        table.with_update_manager().update(condition);
+        table.with_update_manager().update_all(condition);
         table
     }
 }

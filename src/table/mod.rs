@@ -49,6 +49,12 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn with_update_manager(&mut self) -> &mut Self {
         self.update_manager = Some(UpdateManager::<M>::default());
+        if let Some(select_manager) = &mut self.select_manager {
+            if let Some(update_manager) = &mut self.update_manager {
+                update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
+                self.select_manager = None;
+            }
+        }
         self
     }
     pub fn joins(&mut self, condition: Json) -> &mut Self {
@@ -62,12 +68,15 @@ impl<M> Table<M> where M: ModelAble {
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.r#where(condition);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.r#where(condition);
         } else {
             panic!("Not support");
         }
         self
     }
-    pub fn update(&mut self, condition: Json) -> &mut Self {
+    pub fn update_all(&mut self, condition: Json) -> &mut Self {
+        self.with_update_manager();
         if let Some(update_manager) = &mut self.update_manager {
             update_manager.update(condition);
         } else {

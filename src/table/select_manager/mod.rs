@@ -23,7 +23,7 @@ impl<M> Default for SelectManager<M> where M: ModelAble {
 }
 
 impl<M> SelectManager<M> where M: ModelAble {
-    fn ctx_mut(&mut self) -> &mut SelectCore<M> {
+    pub fn ctx_mut(&mut self) -> &mut SelectCore<M> {
         self.ast.cores.last_mut().unwrap()
     }
     // fn ctx(&self) -> &SelectCore<M> {

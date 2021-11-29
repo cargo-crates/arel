@@ -8,7 +8,7 @@ use crate::nodes::{SqlLiteral};
 #[derive(Debug, Clone)]
 pub struct UpdateStatement<M: ModelAble> {
     // @relation = nil
-    wheres: Vec<Where<M>>,
+    pub wheres: Vec<Where<M>>,
     values: Option<Update<M>>,
     // @orders   = []
     // @limit    = nil
@@ -36,6 +36,17 @@ impl<M> UpdateStatement<M> where M: ModelAble {
             Some(SqlLiteral::new(update.to_sql()))
         } else {
             None
+        }
+    }
+    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+        self.wheres.push(Where::<M>::new(condition, false));
+        self
+    }
+    pub fn get_where_sql(&self) -> Option<SqlLiteral> {
+        if self.r#wheres.len() == 0 {
+            None
+        } else {
+            Some(SqlLiteral::new(format!("{}", and::to_sql(&self.r#wheres))))
         }
     }
 }

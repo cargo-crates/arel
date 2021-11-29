@@ -7,7 +7,7 @@ pub struct Source<T: ModelAble> {
 }
 
 impl<T> Source<T> where T: ModelAble {
-    pub fn new(raw_sql: String) -> Self {
+    pub fn new() -> Self {
         Self {
             _marker: PhantomData,
         }

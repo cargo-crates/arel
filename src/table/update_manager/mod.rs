@@ -22,11 +22,15 @@ impl<M> Default for UpdateManager<M> where M: ModelAble {
 }
 
 impl<M> UpdateManager<M> where M: ModelAble {
-    fn ctx_mut(&mut self) -> &mut UpdateStatement<M> {
+    pub fn ctx_mut(&mut self) -> &mut UpdateStatement<M> {
         &mut self.ast
     }
     pub fn update(&mut self, condition: Json) -> &mut Self {
         self.ctx_mut().update(condition);
+        self
+    }
+    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+        self.ctx_mut().r#where(condition);
         self
     }
 }
