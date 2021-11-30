@@ -19,6 +19,7 @@ use crate::table::Table;
 pub trait ModelAble: Sized {
     fn id() -> &'static str { Self::primary_key() }
     fn primary_key() -> &'static str { "id" }
+    fn locking_column() -> &'static str { "lock_version" }
     fn table_name() -> String {
         Table::<Self>::table_name()
     }
@@ -28,6 +29,11 @@ pub trait ModelAble: Sized {
     fn query() -> Table<Self> {
         let mut table = Self::table();
         table.with_select_manager();
+        table
+    }
+    fn lock() -> Table<Self> {
+        let mut table = Self::query();
+        table.lock();
         table
     }
     fn update_all(condition: Json) -> Table<Self> {

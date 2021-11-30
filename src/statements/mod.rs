@@ -1,10 +1,12 @@
 pub mod helpers;
 pub mod r#where;
 pub mod join;
+pub mod lock;
 pub mod update;
 
 pub use r#where::Where;
 pub use join::Join;
+pub use lock::Lock;
 pub use update::Update;
 
 use serde_json::{Value as Json};

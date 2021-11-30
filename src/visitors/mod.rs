@@ -15,6 +15,14 @@ pub fn accept_select_manager<'a, M: ModelAble>(select_manager: &'a SelectManager
     for core in cores {
         visit_arel_select_core(core, collector);
     }
+
+    // SelectOptions
+
+
+    if let Some(sql_literal) = ast.get_lock_sql() {
+        collector.push_str(" ").push_str(&sql_literal.raw_sql);
+    }
+
     collector
 }
 

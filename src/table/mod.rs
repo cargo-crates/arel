@@ -4,7 +4,7 @@ pub use select_manager::SelectManager;
 pub use select_manager::select_statement::SelectStatement;
 pub use update_manager::UpdateManager;
 
-use serde_json::Value as Json;
+use serde_json::{Value as Json, json};
 use crate::methods::type_to_pluralize_string;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -54,6 +54,14 @@ impl<M> Table<M> where M: ModelAble {
                 update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
                 self.select_manager = None;
             }
+        }
+        self
+    }
+    pub fn lock(&mut self) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.lock(json!("FOR UPDATE"));
+        } else {
+            panic!("Not support");
         }
         self
     }
