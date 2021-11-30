@@ -26,7 +26,10 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
                     vec.push(SqlLiteral::new(format!("{} {}", table_column_name, self.json_value_sql(json_value, true))));
                 }
             },
-            _ => vec.append(&mut StatementAble::to_sql_literals_default(self))
+            _ => vec.append(&mut StatementAble::to_sql_literals_default(self).into_iter().map(|mut i| {
+                    i.raw_sql = format!("({})", i.raw_sql);
+                    i
+                }).collect()),
         }
         // Ok(vec.join(" AND "))
         vec
@@ -121,12 +124,12 @@ mod tests {
         assert_eq!(r#where.to_sql(), "`users`.`active` != 1 AND `users`.`age` != 18 AND `users`.`gender` NOT IN ('male', 'female') AND `users`.`name` != 'Tom' AND `users`.`profile` IS NOT NULL");
 
         let r#where = Where::<User>::new(json!("age > 18"), false);
-        assert_eq!(r#where.to_sql(), "age > 18");
+        assert_eq!(r#where.to_sql(), "(age > 18)");
 
         let r#where = Where::<User>::new(json!(["age > 18"]), false);
-        assert_eq!(r#where.to_sql(), "age > 18");
+        assert_eq!(r#where.to_sql(), "(age > 18)");
         let r#where = Where::<User>::new(json!(["name = ? AND age > ? AND gender in ? AND enable = ?", "Tom", 18, ["male", "female"], true]), false);
-        assert_eq!(r#where.to_sql(), "name = 'Tom' AND age > 18 AND gender in ('male', 'female') AND enable = 1");
+        assert_eq!(r#where.to_sql(), "(name = 'Tom' AND age > 18 AND gender in ('male', 'female') AND enable = 1)");
     }
 }
 

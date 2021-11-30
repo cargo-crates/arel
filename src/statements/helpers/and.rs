@@ -22,6 +22,6 @@ mod tests {
             Where::<User>::new(json!({"profile": null}), false),
             Where::<User>::new(json!(["name = ?", "Tom"]), false),
         ];
-        assert_eq!(super::to_sql(&wheres), "`users`.`profile` IS NULL AND name = 'Tom'");
+        assert_eq!(super::to_sql(&wheres), "`users`.`profile` IS NULL AND (name = 'Tom')");
     }
 }

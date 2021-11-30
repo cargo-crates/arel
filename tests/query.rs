@@ -15,7 +15,7 @@ mod query {
             .r#where(json!({"name": "Tom"}))
             .r#where(json!(["active = ?", true]))
             .to_sql();
-        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1");
+        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND (active = 1)");
 
         let sql = User::query()
             .joins(json!("left join orders on users.id = orders.user_id"))
