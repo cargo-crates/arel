@@ -31,7 +31,11 @@ impl<M> StatementAble<M> for Update<M> where M: ModelAble {
         vec
     }
     fn to_sql(&self) -> String {
-        self.to_sql_with_concat(", ")
+        let mut sql = "UPDATE ".to_string();
+        sql.push_str(&methods::quote_table_name(&M::table_name()));
+        sql.push_str(" SET ");
+        sql.push_str(&self.to_sql_with_concat(", "));
+        sql
     }
 }
 
@@ -60,12 +64,12 @@ mod tests {
             "active": true,
             "profile": null
         }));
-        assert_eq!(update.to_sql(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = null");
+        assert_eq!(update.to_sql(), "UPDATE `users` SET `users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = null");
 
         let update = Update::<User>::new(json!("users.active = 1"));
-        assert_eq!(update.to_sql(), "users.active = 1");
+        assert_eq!(update.to_sql(), "UPDATE `users` SET users.active = 1");
 
         let update = Update::<User>::new(json!(["users.active = ?", 1]));
-        assert_eq!(update.to_sql(), "users.active = 1");
+        assert_eq!(update.to_sql(), "UPDATE `users` SET users.active = 1");
     }
 }

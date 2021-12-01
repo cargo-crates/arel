@@ -54,7 +54,9 @@ impl<M> Table<M> where M: ModelAble {
         self
     }
     pub fn with_select_manager(&mut self) -> &mut Self {
-        self.select_manager = Some(SelectManager::<M>::default());
+        if self.select_manager.is_none() {
+            self.select_manager = Some(SelectManager::<M>::default());
+        }
         self
     }
     pub fn select(&mut self, condition: Json) -> &mut Self {
@@ -90,11 +92,13 @@ impl<M> Table<M> where M: ModelAble {
         self
     }
     pub fn with_update_manager(&mut self) -> &mut Self {
-        self.update_manager = Some(UpdateManager::<M>::default());
-        if let Some(select_manager) = &mut self.select_manager {
-            if let Some(update_manager) = &mut self.update_manager {
-                update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
-                self.select_manager = None;
+        if self.update_manager.is_none() {
+            self.update_manager = Some(UpdateManager::<M>::default());
+            if let Some(select_manager) = &mut self.select_manager {
+                if let Some(update_manager) = &mut self.update_manager {
+                    update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
+                    self.select_manager = None;
+                }
             }
         }
         self

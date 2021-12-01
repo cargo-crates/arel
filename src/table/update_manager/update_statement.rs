@@ -8,8 +8,8 @@ use crate::nodes::{SqlLiteral};
 #[derive(Debug, Clone)]
 pub struct UpdateStatement<M: ModelAble> {
     // @relation = nil
+    update: Option<Update<M>>,
     pub wheres: Vec<Where<M>>,
-    values: Option<Update<M>>,
     // @orders   = []
     // @limit    = nil
     // @offset   = nil
@@ -19,8 +19,8 @@ pub struct UpdateStatement<M: ModelAble> {
 impl<M> Default for UpdateStatement<M> where M: ModelAble {
     fn default() -> Self {
         Self {
+            update: None,
             wheres: vec![],
-            values: None,
             _marker: PhantomData,
         }
     }
@@ -28,11 +28,11 @@ impl<M> Default for UpdateStatement<M> where M: ModelAble {
 
 impl<M> UpdateStatement<M> where M: ModelAble {
     pub fn update(&mut self, condition: Json) -> &mut Self {
-        self.values = Some(Update::new(condition));
+        self.update = Some(Update::new(condition));
         self
     }
     pub fn get_update_sql(&self) -> Option<SqlLiteral> {
-        if let Some(update) = &self.values {
+        if let Some(update) = &self.update {
             Some(SqlLiteral::new(update.to_sql()))
         } else {
             None

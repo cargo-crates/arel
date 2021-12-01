@@ -42,7 +42,7 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
             sql.push_str("DISTINCT ");
         }
         sql.push_str(&self.to_sql_with_concat(", "));
-        sql.to_string()
+        sql
     }
 }
 
