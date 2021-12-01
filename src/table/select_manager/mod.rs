@@ -52,4 +52,8 @@ impl<M> SelectManager<M> where M: ModelAble {
     // pub fn get_where_sql(&self) -> Option<SqlLiteral> {
     //     self.ctx().get_where_sql()
     // }
+    pub fn order(&mut self, condition: Json) -> &mut Self {
+        self.ast.order(condition);
+        self
+    }
 }

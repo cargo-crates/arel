@@ -1,7 +1,7 @@
 pub mod and;
 
 use crate::statements::{StatementAble};
-use crate::collectors::{SqlString};
+// use crate::collectors::{SqlString};
 use crate::traits::ModelAble;
 
 pub fn inject_join<M: ModelAble, S: StatementAble<M>>(list: &Vec<S>, join_str: &str) -> String {

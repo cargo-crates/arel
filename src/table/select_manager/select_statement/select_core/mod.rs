@@ -2,7 +2,7 @@ mod join_source;
 pub use join_source::JoinSource;
 
 use serde_json::{Value as Json};
-use crate::statements::{StatementAble, Where, Select, helpers::{self, and}};
+use crate::statements::{StatementAble, Where, Select, helpers::and};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;

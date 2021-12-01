@@ -43,4 +43,11 @@ mod query {
         let sql = User::lock().r#where(json!({"x": 1})).to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`x` = 1 FOR UPDATE");
     }
+    #[test]
+    fn test_order() {
+        let sql = User::query().order(json!({
+            "name": "desc"
+        })).order(json!("age ASC")).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` `users`.`name` DESC, age ASC");
+    }
 }

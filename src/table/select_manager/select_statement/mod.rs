@@ -5,16 +5,16 @@ use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::Value as Json;
 use crate::traits::ModelAble;
-use crate::statements::{StatementAble, Lock};
+use crate::statements::{StatementAble, Order, Lock, helpers};
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
 pub struct SelectStatement<M: ModelAble> {
     pub cores: Vec<SelectCore<M>>,
-    // orders: Vec<StatementsType<M>>,
+    orders: Vec<Order<M>>,
+    // offset: Option<StatementsType<M>>,
     // limit: Option<StatementsType<M>>,
     lock: Option<Lock<M>>,
-    // offset: Option<StatementsType<M>>,
     // with: Option<StatementsType<M>>,
     _marker: PhantomData<M>,
 }
@@ -25,10 +25,10 @@ impl<M> Default for SelectStatement<M> where M: ModelAble {
     fn default() -> Self {
         Self {
             cores: vec![SelectCore::<M>::default()],
-            // orders: vec![],
+            orders: vec![],
+            // offset: None,
             // limit: None,
             lock: None,
-            // offset: None,
             // with: None,
             _marker: PhantomData,
         }
@@ -45,6 +45,17 @@ impl<M> SelectStatement<M> where M: ModelAble {
             Some(SqlLiteral::new(lock.to_sql()))
         } else {
             None
+        }
+    }
+    pub fn order(&mut self, condition: Json) -> &mut Self {
+        self.orders.push(Order::new(condition));
+        self
+    }
+    pub fn get_order_sql(&self) -> Option<SqlLiteral> {
+        if self.orders.len() == 0 {
+            None
+        } else {
+            Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")))
         }
     }
 }

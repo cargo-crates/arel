@@ -91,6 +91,14 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn order(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.order(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn with_update_manager(&mut self) -> &mut Self {
         if self.update_manager.is_none() {
             self.update_manager = Some(UpdateManager::<M>::default());
