@@ -1,9 +1,11 @@
 pub mod helpers;
+pub mod select;
 pub mod r#where;
 pub mod join;
 pub mod lock;
 pub mod update;
 
+pub use select::Select;
 pub use r#where::Where;
 pub use join::Join;
 pub use lock::Lock;
@@ -39,7 +41,6 @@ pub trait StatementAble<M: ModelAble> {
                 }
             }
             _ => {
-                println!("==={:?}", self.value());
                 panic!("Error: Not Support!")
             }
         }

@@ -2,7 +2,7 @@ mod join_source;
 pub use join_source::JoinSource;
 
 use serde_json::{Value as Json};
-use crate::statements::{Where, helpers::and};
+use crate::statements::{StatementAble, Where, Select, helpers::and};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -11,6 +11,7 @@ use crate::nodes::{SqlLiteral};
 #[derive(Clone, Debug)]
 pub struct SelectCore<M: ModelAble> {
     join_source: Option<JoinSource<M>>,
+    select: Select<M>,
     // set_quantifier: Option<_>,
     // optimizer_hints: Option<_>,
     // projections: Vec<StatementsType<M>>,
@@ -26,6 +27,7 @@ impl<M> Default for SelectCore<M> where M: ModelAble {
     fn default() -> Self {
         Self {
             join_source: None,
+            select: Select::<M>::default(),
             // projections: vec![],
             wheres: vec![],
             // groups: vec![],
@@ -37,6 +39,17 @@ impl<M> Default for SelectCore<M> where M: ModelAble {
 }
 
 impl<M> SelectCore<M> where M: ModelAble {
+    pub fn select(&mut self, condition: Json) -> &mut Self {
+        self.select.value = condition;
+        self
+    }
+    pub fn distinct(&mut self) -> &mut Self {
+        self.select.distinct = true;
+        self
+    }
+    pub fn get_select_sql(&self) -> SqlLiteral {
+        SqlLiteral::new(self.select.to_sql())
+    }
     pub fn joins(&mut self, condition: Json) -> &mut Self {
         self.join_source = Some(JoinSource::<M>::new(condition));
         self

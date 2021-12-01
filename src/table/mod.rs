@@ -43,17 +43,33 @@ impl<M> Table<M> where M: ModelAble {
             _marker: PhantomData
         }
     }
+    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.r#where(condition);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.r#where(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn with_select_manager(&mut self) -> &mut Self {
         self.select_manager = Some(SelectManager::<M>::default());
         self
     }
-    pub fn with_update_manager(&mut self) -> &mut Self {
-        self.update_manager = Some(UpdateManager::<M>::default());
+    pub fn select(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
-            if let Some(update_manager) = &mut self.update_manager {
-                update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
-                self.select_manager = None;
-            }
+            select_manager.select(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn distinct(&mut self) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.distinct();
+        } else {
+            panic!("Not support");
         }
         self
     }
@@ -73,13 +89,13 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
-    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+    pub fn with_update_manager(&mut self) -> &mut Self {
+        self.update_manager = Some(UpdateManager::<M>::default());
         if let Some(select_manager) = &mut self.select_manager {
-            select_manager.r#where(condition);
-        } else if let Some(update_manager) = &mut self.update_manager {
-            update_manager.r#where(condition);
-        } else {
-            panic!("Not support");
+            if let Some(update_manager) = &mut self.update_manager {
+                update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
+                self.select_manager = None;
+            }
         }
         self
     }

@@ -29,6 +29,14 @@ impl<M> SelectManager<M> where M: ModelAble {
     // fn ctx(&self) -> &SelectCore<M> {
     //     self.ast.cores.last().unwrap()
     // }
+    pub fn select(&mut self, condition: Json) -> &mut Self {
+        self.ctx_mut().select(condition);
+        self
+    }
+    pub fn distinct(&mut self) -> &mut Self {
+        self.ctx_mut().distinct();
+        self
+    }
     pub fn lock(&mut self, condition: Json) -> &mut Self {
         self.ast.lock(condition);
         self
