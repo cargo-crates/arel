@@ -2,7 +2,7 @@ mod join_source;
 pub use join_source::JoinSource;
 
 use serde_json::{Value as Json};
-use crate::statements::{StatementAble, Where, Select, helpers::and};
+use crate::statements::{StatementAble, Where, Select, helpers::{self, and}};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -48,7 +48,12 @@ impl<M> SelectCore<M> where M: ModelAble {
         self
     }
     pub fn get_select_sql(&self) -> SqlLiteral {
-        SqlLiteral::new(self.select.to_sql())
+        let mut sql = "SELECT ".to_string();
+        if self.select.distinct {
+            sql.push_str("DISTINCT ");
+        }
+        sql.push_str(&self.select.to_sql());
+        SqlLiteral::new(sql)
     }
     pub fn joins(&mut self, condition: Json) -> &mut Self {
         self.join_source = Some(JoinSource::<M>::new(condition));

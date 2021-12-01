@@ -1,13 +1,15 @@
 pub mod helpers;
 pub mod select;
-pub mod r#where;
 pub mod join;
+pub mod r#where;
+pub mod order;
 pub mod lock;
 pub mod update;
 
 pub use select::Select;
-pub use r#where::Where;
 pub use join::Join;
+pub use r#where::Where;
+pub use order::Order;
 pub use lock::Lock;
 pub use update::Update;
 

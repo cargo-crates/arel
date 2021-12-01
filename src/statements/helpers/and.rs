@@ -3,9 +3,7 @@ use crate::traits::ModelAble;
 use crate::statements::{StatementAble, helpers};
 
 pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> String {
-    let mut collector = SqlString::default();
-    helpers::inject_join(children, &mut collector, " AND ");
-    collector.value
+    helpers::inject_join(children, " AND ")
 }
 
 #[cfg(test)]

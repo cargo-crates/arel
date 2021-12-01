@@ -37,12 +37,7 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
         vec
     }
     fn to_sql(&self) -> String {
-        let mut sql = "SELECT ".to_string();
-        if self.distinct {
-            sql.push_str("DISTINCT ");
-        }
-        sql.push_str(&self.to_sql_with_concat(", "));
-        sql
+        self.to_sql_with_concat(", ")
     }
 }
 
@@ -77,13 +72,9 @@ mod tests {
         impl ModelAble for User {}
 
         let select = Select::<User>::new(json!("name, age"), false);
-        assert_eq!(select.to_sql(), "SELECT name, age");
-        let select = Select::<User>::new(json!("name, age"), true);
-        assert_eq!(select.to_sql(), "SELECT DISTINCT name, age");
+        assert_eq!(select.to_sql(), "name, age");
 
         let select = Select::<User>::new(json!(["name", "age"]), false);
-        assert_eq!(select.to_sql(), "SELECT `users`.`name`, `users`.`age`");
-        let select = Select::<User>::new(json!(["name", "age"]), true);
-        assert_eq!(select.to_sql(), "SELECT DISTINCT `users`.`name`, `users`.`age`");
+        assert_eq!(select.to_sql(), "`users`.`name`, `users`.`age`");
     }
 }

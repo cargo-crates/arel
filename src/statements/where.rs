@@ -1,9 +1,9 @@
 use serde_json::{Value as Json};
+use std::marker::PhantomData;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
 use crate::traits::ModelAble;
 use crate::methods;
-use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]
 pub struct Where<M: ModelAble> {

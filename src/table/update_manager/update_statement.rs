@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use std::default::Default;
 use crate::traits::ModelAble;
 use crate::nodes::{SqlLiteral};
+use crate::methods;
 
 #[derive(Debug, Clone)]
 pub struct UpdateStatement<M: ModelAble> {
@@ -33,7 +34,11 @@ impl<M> UpdateStatement<M> where M: ModelAble {
     }
     pub fn get_update_sql(&self) -> Option<SqlLiteral> {
         if let Some(update) = &self.update {
-            Some(SqlLiteral::new(update.to_sql()))
+            let mut sql = "UPDATE ".to_string();
+            sql.push_str(&methods::quote_table_name(&M::table_name()));
+            sql.push_str(" SET ");
+            sql.push_str(&update.to_sql());
+            Some(SqlLiteral::new(sql))
         } else {
             None
         }
