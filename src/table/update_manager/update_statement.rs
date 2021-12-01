@@ -43,8 +43,8 @@ impl<M> UpdateStatement<M> where M: ModelAble {
             None
         }
     }
-    pub fn r#where(&mut self, condition: Json) -> &mut Self {
-        self.wheres.push(Where::<M>::new(condition, false));
+    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
+        self.wheres.push(Where::<M>::new(condition, is_not));
         self
     }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {

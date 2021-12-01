@@ -45,9 +45,19 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
-            select_manager.r#where(condition);
+            select_manager.r#where(condition, false);
         } else if let Some(update_manager) = &mut self.update_manager {
-            update_manager.r#where(condition);
+            update_manager.r#where(condition, false);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn where_not(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.r#where(condition, true);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.r#where(condition, true);
         } else {
             panic!("Not support");
         }
@@ -91,6 +101,30 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn group(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.group(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn having(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.having(condition, false);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn having_not(&mut self, condition: Json) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.having(condition, true);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn order(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.order(condition);
@@ -99,15 +133,31 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn limit(&mut self, condition: usize) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.limit(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn offset(&mut self, condition: usize) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.offset(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn with_update_manager(&mut self) -> &mut Self {
         if self.update_manager.is_none() {
             self.update_manager = Some(UpdateManager::<M>::default());
-            if let Some(select_manager) = &mut self.select_manager {
-                if let Some(update_manager) = &mut self.update_manager {
-                    update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
-                    self.select_manager = None;
-                }
-            }
+            // if let Some(select_manager) = &mut self.select_manager {
+            //     if let Some(update_manager) = &mut self.update_manager {
+            //         update_manager.ctx_mut().wheres.append(&mut select_manager.ctx_mut().wheres);
+            //         self.select_manager = None;
+            //     }
+            // }
         }
         self
     }
@@ -120,13 +170,18 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
-    pub fn to_sql(&self) -> String {
+    pub fn to_sql(&mut self) -> String {
         let mut collector = SqlString::default();
-        if let Some(select_manager) = &self.select_manager {
+        if let Some(update_manager) = &self.update_manager {
+            let mut for_update_select_manager = None;
+            if let Some(select_manager) = &mut self.select_manager {
+                select_manager.select(json!([M::primary_key()]));
+                for_update_select_manager = Some(select_manager);
+            }
+            visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector);
+        } else if let Some(select_manager) = &self.select_manager {
             visitors::accept_select_manager(select_manager, &mut collector);
-        } else if let Some(update_manager) = &self.update_manager {
-            visitors::accept_update_manager(update_manager, &mut collector);
-        } else {
+        }  else {
             panic!("Not support");
         }
         collector.value

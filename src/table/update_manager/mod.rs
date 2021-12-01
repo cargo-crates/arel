@@ -29,8 +29,8 @@ impl<M> UpdateManager<M> where M: ModelAble {
         self.ctx_mut().update(condition);
         self
     }
-    pub fn r#where(&mut self, condition: Json) -> &mut Self {
-        self.ctx_mut().r#where(condition);
+    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
+        self.ctx_mut().r#where(condition, is_not);
         self
     }
 }

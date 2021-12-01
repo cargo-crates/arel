@@ -45,15 +45,31 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().joins(condition);
         self
     }
-    pub fn r#where(&mut self, condition: Json) -> &mut Self {
-        self.ctx_mut().r#where(condition);
+    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
+        self.ctx_mut().r#where(condition, is_not);
         self
     }
     // pub fn get_where_sql(&self) -> Option<SqlLiteral> {
     //     self.ctx().get_where_sql()
     // }
+    pub fn group(&mut self, condition: Json) -> &mut Self {
+        self.ctx_mut().group(condition);
+        self
+    }
+    pub fn having(&mut self, condition: Json, is_not: bool) -> &mut Self {
+        self.ctx_mut().having(condition, is_not);
+        self
+    }
     pub fn order(&mut self, condition: Json) -> &mut Self {
         self.ast.order(condition);
+        self
+    }
+    pub fn limit(&mut self, condition: usize) -> &mut Self {
+        self.ast.limit(condition);
+        self
+    }
+    pub fn offset(&mut self, condition: usize) -> &mut Self {
+        self.ast.offset(condition);
         self
     }
 }

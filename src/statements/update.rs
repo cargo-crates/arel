@@ -12,20 +12,22 @@ pub struct Update<M: ModelAble> {
 }
 
 impl<M> StatementAble<M> for Update<M> where M: ModelAble {
-    fn value(&self) -> &Json {
-        &self.value
+    fn json_value(&self) -> Option<&Json> {
+        Some(&self.value)
     }
     fn to_sql_literals(&self) -> Vec<SqlLiteral> {
         let mut vec = vec![];
-        match self.value() {
-            Json::Object(json_object) => {
-                for column_name in json_object.keys() {
-                    let table_column_name = methods::table_column_name::<M>(column_name);
-                    let json_value = json_object.get(column_name).unwrap();
-                    vec.push(SqlLiteral::new(format!("{} = {}", table_column_name, self.json_value_sql(json_value))));
-                }
-            },
-            _ => vec.append(&mut StatementAble::to_sql_literals_default(self))
+        if let Some(json_value) = self.json_value() {
+            match json_value {
+                Json::Object(json_object) => {
+                    for column_name in json_object.keys() {
+                        let table_column_name = methods::table_column_name::<M>(column_name);
+                        let json_value = json_object.get(column_name).unwrap();
+                        vec.push(SqlLiteral::new(format!("{} = {}", table_column_name, self.json_value_sql(json_value))));
+                    }
+                },
+                _ => vec.append(&mut StatementAble::to_sql_literals_default(self))
+            }
         }
         // Ok(vec.join(", "))
         vec

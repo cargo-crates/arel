@@ -5,15 +5,15 @@ use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::Value as Json;
 use crate::traits::ModelAble;
-use crate::statements::{StatementAble, Order, Lock, helpers};
+use crate::statements::{StatementAble, Order, Limit, Offset, Lock, helpers};
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
 pub struct SelectStatement<M: ModelAble> {
     pub cores: Vec<SelectCore<M>>,
     orders: Vec<Order<M>>,
-    // offset: Option<StatementsType<M>>,
-    // limit: Option<StatementsType<M>>,
+    limit: Option<Limit<M>>,
+    offset: Option<Offset<M>>,
     lock: Option<Lock<M>>,
     // with: Option<StatementsType<M>>,
     _marker: PhantomData<M>,
@@ -26,8 +26,8 @@ impl<M> Default for SelectStatement<M> where M: ModelAble {
         Self {
             cores: vec![SelectCore::<M>::default()],
             orders: vec![],
-            // offset: None,
-            // limit: None,
+            limit: None,
+            offset: None,
             lock: None,
             // with: None,
             _marker: PhantomData,
@@ -56,6 +56,28 @@ impl<M> SelectStatement<M> where M: ModelAble {
             None
         } else {
             Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")))
+        }
+    }
+    pub fn limit(&mut self, condition: usize) -> &mut Self {
+        self.limit = Some(Limit::new(condition));
+        self
+    }
+    pub fn get_limit_sql(&self) -> Option<SqlLiteral> {
+        if let Some(limit) = &self.limit {
+            Some(SqlLiteral::new(limit.to_sql()))
+        } else {
+            None
+        }
+    }
+    pub fn offset(&mut self, condition: usize) -> &mut Self {
+        self.offset = Some(Offset::new(condition));
+        self
+    }
+    pub fn get_offset_sql(&self) -> Option<SqlLiteral> {
+        if let Some(offset) = &self.offset {
+            Some(SqlLiteral::new(offset.to_sql()))
+        } else {
+            None
         }
     }
 }

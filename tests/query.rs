@@ -33,6 +33,12 @@ mod query {
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND (active = 1)");
 
         let sql = User::query()
+            .r#where_not(json!({"name": "Tom", "status": [1, 2, 3]}))
+            .r#where(json!(["active = ?", true]))
+            .to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` != 'Tom' AND `users`.`status` NOT IN (1, 2, 3) AND (active = 1)");
+
+        let sql = User::query()
             .joins(json!("left join orders on users.id = orders.user_id"))
             .r#where(json!({"name": "Tom"}))
             .to_sql();
@@ -44,10 +50,30 @@ mod query {
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`x` = 1 FOR UPDATE");
     }
     #[test]
+    fn test_group_having() {
+        let sql = User::query().group(json!(["name", "email"])).group(json!("age")).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY `users`.`name`, `users`.`email`, age");
+
+        let sql = User::query().group(json!("age"))
+            .having_not(json!({"x": 1}))
+            .having(json!(["y > ?", 2])).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY age HAVING `users`.`x` != 1 AND (y > 2)");
+    }
+    #[test]
     fn test_order() {
         let sql = User::query().order(json!({
             "name": "desc"
         })).order(json!("age ASC")).to_sql();
-        assert_eq!(sql, "SELECT `users`.* FROM `users` `users`.`name` DESC, age ASC");
+        assert_eq!(sql, "SELECT `users`.* FROM `users` ORDER BY `users`.`name` DESC, age ASC");
+    }
+    #[test]
+    fn test_limit() {
+        let sql = User::query().limit(10).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` LIMIT 10");
+    }
+    #[test]
+    fn test_offset() {
+        let sql = User::query().offset(10).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` OFFSET 10");
     }
 }

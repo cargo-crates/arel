@@ -7,13 +7,12 @@ use crate::nodes::SqlLiteral;
 use crate::methods;
 
 #[derive(Clone, Debug)]
-pub struct Select<M: ModelAble> {
+pub struct Group<M: ModelAble> {
     pub value: Json,
-    pub distinct: bool,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Select<M> where M: ModelAble {
+impl<M> StatementAble<M> for Group<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -43,21 +42,19 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
     }
 }
 
-impl<M> Default for Select<M> where M: ModelAble {
+impl<M> Default for Group<M> where M: ModelAble {
     fn default() -> Self {
         Self {
             value: json!(["*"]),
-            distinct: false,
             _marker: PhantomData
         }
     }
 }
 
-impl<M> Select<M> where M: ModelAble {
-    pub fn new(value: Json, distinct: bool) -> Self {
+impl<M> Group<M> where M: ModelAble {
+    pub fn new(value: Json) -> Self {
         Self {
             value,
-            distinct,
             _marker: PhantomData,
         }
     }
@@ -73,10 +70,10 @@ mod tests {
         struct User {}
         impl ModelAble for User {}
 
-        let select = Select::<User>::new(json!("name, age"), false);
-        assert_eq!(select.to_sql(), "name, age");
+        let group = Group::<User>::new(json!("name, age"));
+        assert_eq!(group.to_sql(), "name, age");
 
-        let select = Select::<User>::new(json!(["name", "age"]), false);
-        assert_eq!(select.to_sql(), "`users`.`name`, `users`.`age`");
+        let group = Group::<User>::new(json!(["name", "age"]));
+        assert_eq!(group.to_sql(), "`users`.`name`, `users`.`age`");
     }
 }

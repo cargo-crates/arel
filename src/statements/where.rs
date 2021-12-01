@@ -8,28 +8,36 @@ use crate::methods;
 #[derive(Clone, Debug)]
 pub struct Where<M: ModelAble> {
     value: Json,
-    is_where_not: bool,
+    is_not: bool,
     _marker: PhantomData<M>,
 }
 
 impl<M> StatementAble<M> for Where<M> where M: ModelAble {
-    fn value(&self) -> &Json {
-        &self.value
+    fn json_value(&self) -> Option<&Json> {
+        Some(&self.value)
     }
     fn to_sql_literals(&self) -> Vec<SqlLiteral> {
         let mut vec = vec![];
-        match self.value() {
-            Json::Object(json_object) => {
-                for column_name in json_object.keys() {
-                    let table_column_name = methods::table_column_name::<M>(column_name);
-                    let json_value = json_object.get(column_name).unwrap();
-                    vec.push(SqlLiteral::new(format!("{} {}", table_column_name, self.json_value_sql(json_value, true))));
-                }
-            },
-            _ => vec.append(&mut StatementAble::to_sql_literals_default(self).into_iter().map(|mut i| {
-                    i.raw_sql = format!("({})", i.raw_sql);
-                    i
-                }).collect()),
+        if let Some(json_value) = self.json_value() {
+            match json_value {
+                Json::Object(json_object) => {
+                    for column_name in json_object.keys() {
+                        let table_column_name = methods::table_column_name::<M>(column_name);
+                        let json_value = json_object.get(column_name).unwrap();
+                        vec.push(SqlLiteral::new(format!("{} {}", table_column_name, self.json_value_sql(json_value, true))));
+                    }
+                },
+                _ => {
+                    if self.is_not {
+                        panic!("Error: Not Support")
+                    } else {
+                        vec.append(&mut StatementAble::to_sql_literals_default(self).into_iter().map(|mut i| {
+                            i.raw_sql = format!("({})", i.raw_sql);
+                            i
+                        }).collect())
+                    }
+                },
+            }
         }
         // Ok(vec.join(" AND "))
         vec
@@ -40,10 +48,10 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
 }
 
 impl<M> Where<M> where M: ModelAble {
-    pub fn new(value: Json, is_where_not: bool) -> Self {
+    pub fn new(value: Json, is_not: bool) -> Self {
         Self {
             value,
-            is_where_not,
+            is_not,
             _marker: PhantomData,
         }
     }
@@ -56,21 +64,21 @@ impl<M> Where<M> where M: ModelAble {
                 }
                 let value = format!("({})", values.join(", "));
                 if with_modifier {
-                    if self.is_where_not { format!("NOT IN {}", value) } else { format!("IN {}", value) }
+                    if self.is_not { format!("NOT IN {}", value) } else { format!("IN {}", value) }
                 } else {
                     value
                 }
             },
             Json::String(json_string) => {
                 if with_modifier {
-                    if self.is_where_not { format!("!= '{}'", json_string) } else { format!("= '{}'", json_string) }
+                    if self.is_not { format!("!= '{}'", json_string) } else { format!("= '{}'", json_string) }
                 } else {
                     format!("'{}'", json_string)
                 }
             },
             Json::Number(json_number) => {
                 if with_modifier {
-                    if self.is_where_not { format!("!= {}", json_number) } else { format!("= {}", json_number) }
+                    if self.is_not { format!("!= {}", json_number) } else { format!("= {}", json_number) }
                 } else {
                     format!("{}", json_number)
                 }
@@ -78,14 +86,14 @@ impl<M> Where<M> where M: ModelAble {
             Json::Bool(json_bool) => {
                 let value = if *json_bool {1} else {0};
                 if with_modifier {
-                    if self.is_where_not { format!("!= {}", value) } else { format!("= {}", value) }
+                    if self.is_not { format!("!= {}", value) } else { format!("= {}", value) }
                 } else {
                     format!("{}", value)
                 }
             },
             Json::Null => {
                 if with_modifier {
-                    if self.is_where_not { format!("IS NOT NULL") } else { format!("IS NULL") }
+                    if self.is_not { format!("IS NOT NULL") } else { format!("IS NULL") }
                 } else {
                     panic!("Error: Not Support")
                 }

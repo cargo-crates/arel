@@ -10,8 +10,8 @@ pub struct Lock<M: ModelAble> {
 }
 
 impl<M> StatementAble<M> for Lock<M> where M: ModelAble {
-    fn value(&self) -> &Json {
-        &self.value
+    fn json_value(&self) -> Option<&Json> {
+        Some(&self.value)
     }
     fn to_sql(&self) -> String {
         self.to_sql_with_concat(" ")
