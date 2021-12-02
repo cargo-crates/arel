@@ -35,7 +35,7 @@ mod query {
         // min
         let sql = User::query().min("price").to_sql();
         assert_eq!(sql, "SELECT MIN(`users`.`price`) FROM `users`");
-        // min
+        // max
         let sql = User::query().max("price").to_sql();
         assert_eq!(sql, "SELECT MAX(`users`.`price`) FROM `users`");
     }
