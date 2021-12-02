@@ -1,10 +1,12 @@
 pub mod select_manager;
 pub mod insert_manager;
 pub mod update_manager;
+pub mod delete_manager;
 pub use select_manager::SelectManager;
 pub use select_manager::select_statement::SelectStatement;
 pub use insert_manager::InsertManager;
 pub use update_manager::UpdateManager;
+pub use delete_manager::DeleteManager;
 
 use serde_json::{Value as Json, json};
 use crate::methods::type_to_pluralize_string;
@@ -19,6 +21,7 @@ pub struct Table<M: ModelAble> {
     pub select_manager: Option<SelectManager<M>>,
     pub insert_manager: Option<InsertManager<M>>,
     pub update_manager: Option<UpdateManager<M>>,
+    pub delete_manager: Option<DeleteManager<M>>,
     _marker: PhantomData<M>,
 }
 
@@ -44,6 +47,7 @@ impl<M> Table<M> where M: ModelAble {
             select_manager: None,
             insert_manager: None,
             update_manager: None,
+            delete_manager: None,
             _marker: PhantomData
         }
     }
@@ -52,6 +56,8 @@ impl<M> Table<M> where M: ModelAble {
             select_manager.r#where(condition, false);
         } else if let Some(update_manager) = &mut self.update_manager {
             update_manager.r#where(condition, false);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.r#where(condition, false);
         } else {
             panic!("Not support");
         }
@@ -62,6 +68,8 @@ impl<M> Table<M> where M: ModelAble {
             select_manager.r#where(condition, true);
         } else if let Some(update_manager) = &mut self.update_manager {
             update_manager.r#where(condition, true);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.r#where(condition, true);
         } else {
             panic!("Not support");
         }
@@ -172,6 +180,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn order(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.order(condition);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.order(condition);
         } else {
             panic!("Not support");
         }
@@ -180,6 +190,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn limit(&mut self, condition: usize) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.limit(condition);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.limit(condition);
         } else {
             panic!("Not support");
         }
@@ -188,6 +200,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn offset(&mut self, condition: usize) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.offset(condition);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.offset(condition);
         } else {
             panic!("Not support");
         }
@@ -235,6 +249,21 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn with_delete_manager(&mut self) -> &mut Self {
+        if self.delete_manager.is_none() {
+            self.delete_manager = Some(DeleteManager::<M>::default());
+        }
+        self
+    }
+    pub fn delete_all(&mut self, condition: Json) -> &mut Self {
+        self.with_delete_manager();
+        if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.r#where(condition, false);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn to_sql(&mut self) -> String {
         let mut collector = SqlString::default();
         if let Some(insert_manager) = &self.insert_manager {
@@ -246,6 +275,8 @@ impl<M> Table<M> where M: ModelAble {
                 for_update_select_manager = Some(select_manager);
             }
             visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector);
+        } else if let Some(delete_manager) = &self.delete_manager {
+            visitors::accept_delete_manager(delete_manager, &mut collector);
         } else if let Some(select_manager) = &self.select_manager {
             visitors::accept_select_manager(select_manager, &mut collector);
         }  else {

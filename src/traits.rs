@@ -46,4 +46,9 @@ pub trait ModelAble: Sized {
         table.with_update_manager().update_all(condition);
         table
     }
+    fn delete_all(condition: Json) -> Table<Self> {
+        let mut table = Self::table();
+        table.with_delete_manager().r#where(condition);
+        table
+    }
 }

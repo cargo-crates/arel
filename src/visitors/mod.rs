@@ -3,11 +3,7 @@ pub mod mysql;
 use crate::methods::{quote_table_name};
 use crate::traits::ModelAble;
 use crate::collectors::SqlString;
-use crate::table::{
-    SelectManager,
-    update_manager::{UpdateManager, UpdateStatement},
-    insert_manager::{InsertManager, InsertStatement},
-};
+use crate::table::{SelectManager, update_manager::{UpdateManager, UpdateStatement}, insert_manager::{InsertManager, InsertStatement}, delete_manager::{DeleteManager, DeleteStatement}};
 use crate::table::select_manager::select_statement::{SelectCore, SelectStatement};
 use crate::methods;
 
@@ -73,6 +69,25 @@ pub fn accept_insert_manager<'a, M: ModelAble>(insert_manager: &'a InsertManager
     let ast: &InsertStatement<M> = &insert_manager.ast;
     if let Some(sql_literal) = ast.get_insert_sql() {
         collector.push_str(&sql_literal.raw_sql);
+    }
+    collector
+}
+
+pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager<M>, collector: &'a mut SqlString) -> &'a mut SqlString {
+    let ast: &DeleteStatement<M> = &delete_manager.ast;
+    collector.push_str("DELETE FROM ");
+    collector.push_str(&quote_table_name(&M::table_name()));
+    if let Some(sql_literal) = ast.get_where_sql() {
+        collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);
+    }
+    if let Some(sql_literal) = ast.get_order_sql() {
+        collector.push_str(" ORDER BY ").push_str(&sql_literal.raw_sql);
+    }
+    if let Some(sql_literal) = ast.get_limit_sql() {
+        collector.push_str(" ").push_str(&sql_literal.raw_sql);
+    }
+    if let Some(sql_literal) = ast.get_offset_sql() {
+        collector.push_str(" ").push_str(&sql_literal.raw_sql);
     }
     collector
 }
