@@ -1,7 +1,9 @@
 pub mod select_manager;
+pub mod insert_manager;
 pub mod update_manager;
 pub use select_manager::SelectManager;
 pub use select_manager::select_statement::SelectStatement;
+pub use insert_manager::InsertManager;
 pub use update_manager::UpdateManager;
 
 use serde_json::{Value as Json, json};
@@ -15,6 +17,7 @@ use crate::visitors;
 #[derive(Clone, Debug)]
 pub struct Table<M: ModelAble> {
     pub select_manager: Option<SelectManager<M>>,
+    pub insert_manager: Option<InsertManager<M>>,
     pub update_manager: Option<UpdateManager<M>>,
     _marker: PhantomData<M>,
 }
@@ -39,6 +42,7 @@ impl<M> Table<M> where M: ModelAble {
     pub fn new() -> Self {
         Self {
             select_manager: None,
+            insert_manager: None,
             update_manager: None,
             _marker: PhantomData
         }
@@ -216,9 +220,26 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn with_insert_manager(&mut self) -> &mut Self {
+        if self.insert_manager.is_none() {
+            self.insert_manager = Some(InsertManager::<M>::default());
+        }
+        self
+    }
+    pub fn create(&mut self, condition: Json) -> &mut Self {
+        self.with_insert_manager();
+        if let Some(insert_manager) = &mut self.insert_manager {
+            insert_manager.insert(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn to_sql(&mut self) -> String {
         let mut collector = SqlString::default();
-        if let Some(update_manager) = &self.update_manager {
+        if let Some(insert_manager) = &self.insert_manager {
+            visitors::accept_insert_manager(insert_manager, &mut collector);
+        } else if let Some(update_manager) = &self.update_manager {
             let mut for_update_select_manager = None;
             if let Some(select_manager) = &mut self.select_manager {
                 select_manager.select(json!([M::primary_key()]));

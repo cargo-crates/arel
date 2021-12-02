@@ -5,7 +5,8 @@ use crate::traits::ModelAble;
 use crate::collectors::SqlString;
 use crate::table::{
     SelectManager,
-    update_manager::{UpdateManager, UpdateStatement}
+    update_manager::{UpdateManager, UpdateStatement},
+    insert_manager::{InsertManager, InsertStatement},
 };
 use crate::table::select_manager::select_statement::{SelectCore, SelectStatement};
 use crate::methods;
@@ -64,6 +65,14 @@ pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager
         collector.push_str(&format!(" WHERE {} IN ({})", methods::table_column_name::<M>(M::primary_key()), sub_query));
     } else if let Some(sql_literal) = ast.get_where_sql() {
         collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);
+    }
+    collector
+}
+
+pub fn accept_insert_manager<'a, M: ModelAble>(insert_manager: &'a InsertManager<M>, collector: &'a mut SqlString) -> &'a mut SqlString {
+    let ast: &InsertStatement<M> = &insert_manager.ast;
+    if let Some(sql_literal) = ast.get_insert_sql() {
+        collector.push_str(&sql_literal.raw_sql);
     }
     collector
 }

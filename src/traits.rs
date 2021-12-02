@@ -36,6 +36,11 @@ pub trait ModelAble: Sized {
         table.lock();
         table
     }
+    fn create(condition: Json) -> Table<Self> {
+        let mut table = Self::table();
+        table.with_insert_manager().create(condition);
+        table
+    }
     fn update_all(condition: Json) -> Table<Self> {
         let mut table = Self::table();
         table.with_update_manager().update_all(condition);

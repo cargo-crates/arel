@@ -8,6 +8,7 @@ pub mod order;
 pub mod limit;
 pub mod offset;
 pub mod lock;
+pub mod insert;
 pub mod update;
 
 pub use select::Select;
@@ -19,6 +20,7 @@ pub use order::Order;
 pub use limit::Limit;
 pub use offset::Offset;
 pub use lock::Lock;
+pub use insert::Insert;
 pub use update::Update;
 
 use serde_json::{Value as Json};
