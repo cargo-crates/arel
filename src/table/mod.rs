@@ -257,11 +257,7 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn delete_all(&mut self, condition: Json) -> &mut Self {
         self.with_delete_manager();
-        if let Some(delete_manager) = &mut self.delete_manager {
-            delete_manager.r#where(condition, false);
-        } else {
-            panic!("Not support");
-        }
+        self.r#where(condition);
         self
     }
     pub fn to_sql(&mut self) -> String {
@@ -276,7 +272,12 @@ impl<M> Table<M> where M: ModelAble {
             }
             visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector);
         } else if let Some(delete_manager) = &self.delete_manager {
-            visitors::accept_delete_manager(delete_manager, &mut collector);
+            let mut for_update_select_manager = None;
+            if let Some(select_manager) = &mut self.select_manager {
+                select_manager.select(json!([M::primary_key()]));
+                for_update_select_manager = Some(select_manager);
+            }
+            visitors::accept_delete_manager(delete_manager, for_update_select_manager, &mut collector);
         } else if let Some(select_manager) = &self.select_manager {
             visitors::accept_select_manager(select_manager, &mut collector);
         }  else {

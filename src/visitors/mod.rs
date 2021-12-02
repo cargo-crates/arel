@@ -55,12 +55,15 @@ pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager
     if let Some(sql_literal) = ast.get_update_sql() {
         collector.push_str(&sql_literal.raw_sql);
     }
-    if let Some(for_update_select_manager) = &for_update_select_manager {
-        let mut select_collector = SqlString::default();
-        let sub_query = format!("SELECT `{}` FROM ({}) AS __arel_subquery_temp", M::primary_key(), accept_select_manager(for_update_select_manager, &mut select_collector).value);
-        collector.push_str(&format!(" WHERE {} IN ({})", methods::table_column_name::<M>(M::primary_key()), sub_query));
-    } else if let Some(sql_literal) = ast.get_where_sql() {
+
+    let mut exists_where = false;
+    if let Some(sql_literal) = ast.get_where_sql() {
         collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);
+        exists_where = true;
+    }
+    if let Some(subquery) = accept_subquery_select_manager(for_update_select_manager) {
+        collector.push_str(if exists_where { " AND " } else { " WHERE " });
+        collector.push_str(&subquery);
     }
     collector
 }
@@ -73,12 +76,15 @@ pub fn accept_insert_manager<'a, M: ModelAble>(insert_manager: &'a InsertManager
     collector
 }
 
-pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager<M>, collector: &'a mut SqlString) -> &'a mut SqlString {
+pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager<M>, for_delete_select_manager: Option<&mut SelectManager<M>>, collector: &'a mut SqlString) -> &'a mut SqlString {
     let ast: &DeleteStatement<M> = &delete_manager.ast;
     collector.push_str("DELETE FROM ");
     collector.push_str(&quote_table_name(&M::table_name()));
+
+    let mut exists_where = false;
     if let Some(sql_literal) = ast.get_where_sql() {
         collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);
+        exists_where = true;
     }
     if let Some(sql_literal) = ast.get_order_sql() {
         collector.push_str(" ORDER BY ").push_str(&sql_literal.raw_sql);
@@ -89,5 +95,20 @@ pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager
     if let Some(sql_literal) = ast.get_offset_sql() {
         collector.push_str(" ").push_str(&sql_literal.raw_sql);
     }
+    if let Some(subquery) = accept_subquery_select_manager(for_delete_select_manager) {
+        collector.push_str(if exists_where { " AND " } else { " WHERE " });
+        collector.push_str(&subquery);
+    }
     collector
+}
+
+fn accept_subquery_select_manager<M: ModelAble>(subquery_select_manager: Option<&mut SelectManager<M>>) -> Option<String> {
+    if let Some(subquery_select_manager) = subquery_select_manager {
+        let mut select_collector = SqlString::default();
+        let subquery = format!("SELECT `{}` FROM ({}) AS __arel_subquery_temp", M::primary_key(), accept_select_manager(subquery_select_manager, &mut select_collector).value);
+        Some(format!("{} IN ({})", methods::table_column_name::<M>(M::primary_key()), subquery))
+    } else {
+        None
+    }
+
 }
