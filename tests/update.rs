@@ -24,14 +24,14 @@ mod update {
             })).update_all(json!({
                 "name": "Tom"
             })).to_sql();
-        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_select_temp)");
+        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_subquery_temp)");
 
         let mut query = User::query();
         query.r#where(json!({"x": 1}));
         let sql = query.clone().update_all(json!({
                 "name": "Tom"
             })).to_sql();
-        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_select_temp)");
+        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_subquery_temp)");
 
         let sql = query.to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`x` = 1");

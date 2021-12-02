@@ -33,6 +33,26 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().select(condition);
         self
     }
+    pub fn count(&mut self) -> &mut Self {
+        self.ctx_mut().count();
+        self
+    }
+    pub fn sum(&mut self, column_name: &str) -> &mut Self {
+        self.ctx_mut().sum(column_name);
+        self
+    }
+    pub fn avg(&mut self, column_name: &str) -> &mut Self {
+        self.ctx_mut().avg(column_name);
+        self
+    }
+    pub fn min(&mut self, column_name: &str) -> &mut Self {
+        self.ctx_mut().min(column_name);
+        self
+    }
+    pub fn max(&mut self, column_name: &str) -> &mut Self {
+        self.ctx_mut().max(column_name);
+        self
+    }
     pub fn distinct(&mut self) -> &mut Self {
         self.ctx_mut().distinct();
         self

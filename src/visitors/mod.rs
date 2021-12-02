@@ -60,7 +60,7 @@ pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager
     }
     if let Some(for_update_select_manager) = &for_update_select_manager {
         let mut select_collector = SqlString::default();
-        let sub_query = format!("SELECT `{}` FROM ({}) AS __arel_select_temp", M::primary_key(), accept_select_manager(for_update_select_manager, &mut select_collector).value);
+        let sub_query = format!("SELECT `{}` FROM ({}) AS __arel_subquery_temp", M::primary_key(), accept_select_manager(for_update_select_manager, &mut select_collector).value);
         collector.push_str(&format!(" WHERE {} IN ({})", methods::table_column_name::<M>(M::primary_key()), sub_query));
     } else if let Some(sql_literal) = ast.get_where_sql() {
         collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);

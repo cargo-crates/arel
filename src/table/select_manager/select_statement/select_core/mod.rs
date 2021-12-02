@@ -2,7 +2,7 @@ mod join_source;
 pub use join_source::JoinSource;
 
 use serde_json::{Value as Json};
-use crate::statements::{StatementAble, Select, Where, Group, Having, helpers::{self, and}};
+use crate::statements::{StatementAble, select::{Select, Op}, Where, Group, Having, helpers::{self, and}};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -43,15 +43,32 @@ impl<M> SelectCore<M> where M: ModelAble {
         self.select.value = condition;
         self
     }
+    pub fn count(&mut self) -> &mut Self {
+        self.select.op = Some(Op::Count);
+        self
+    }
+    pub fn sum(&mut self, column_name: &str) -> &mut Self {
+        self.select.op = Some(Op::Sum(column_name.to_string()));
+        self
+    }
+    pub fn avg(&mut self, column_name: &str) -> &mut Self {
+        self.select.op = Some(Op::Avg(column_name.to_string()));
+        self
+    }
+    pub fn min(&mut self, column_name: &str) -> &mut Self {
+        self.select.op = Some(Op::Min(column_name.to_string()));
+        self
+    }
+    pub fn max(&mut self, column_name: &str) -> &mut Self {
+        self.select.op = Some(Op::Max(column_name.to_string()));
+        self
+    }
     pub fn distinct(&mut self) -> &mut Self {
         self.select.distinct = true;
         self
     }
     pub fn get_select_sql(&self) -> SqlLiteral {
         let mut sql = "SELECT ".to_string();
-        if self.select.distinct {
-            sql.push_str("DISTINCT ");
-        }
         sql.push_str(&self.select.to_sql());
         SqlLiteral::new(sql)
     }

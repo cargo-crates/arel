@@ -7,9 +7,19 @@ use crate::nodes::SqlLiteral;
 use crate::methods;
 
 #[derive(Clone, Debug)]
+pub enum Op {
+    Count,
+    Sum(String),
+    Avg(String),
+    Min(String),
+    Max(String),
+}
+
+#[derive(Clone, Debug)]
 pub struct Select<M: ModelAble> {
     pub value: Json,
     pub distinct: bool,
+    pub op: Option<Op>,
     _marker: PhantomData<M>,
 }
 
@@ -39,7 +49,34 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
         vec
     }
     fn to_sql(&self) -> String {
-        self.to_sql_with_concat(", ")
+        let mut sql = self.to_sql_with_concat(", ");
+        if self.distinct {
+            sql = format!("DISTINCT {}", &sql);
+        }
+        if let Some(op) = &self.op {
+            match op {
+                Op::Count => {
+                    sql = format!("COUNT({})", &sql);
+                },
+                Op::Sum(column_name) => {
+                    let select = Select::<M>::new(json!([column_name]), self.distinct);
+                    sql = format!("SUM({})", &select.to_sql());
+                },
+                Op::Avg(column_name) => {
+                    let select = Select::<M>::new(json!([column_name]), self.distinct);
+                    sql = format!("AVG({})", &select.to_sql());
+                },
+                Op::Min(column_name) => {
+                    let select = Select::<M>::new(json!([column_name]), self.distinct);
+                    sql = format!("MIN({})", &select.to_sql());
+                },
+                Op::Max(column_name) => {
+                    let select = Select::<M>::new(json!([column_name]), self.distinct);
+                    sql = format!("MAX({})", &select.to_sql());
+                }
+            }
+        }
+        sql
     }
 }
 
@@ -48,6 +85,7 @@ impl<M> Default for Select<M> where M: ModelAble {
         Self {
             value: json!(["*"]),
             distinct: false,
+            op: None,
             _marker: PhantomData
         }
     }
@@ -58,6 +96,7 @@ impl<M> Select<M> where M: ModelAble {
         Self {
             value,
             distinct,
+            op: None,
             _marker: PhantomData,
         }
     }

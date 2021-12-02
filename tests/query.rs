@@ -23,6 +23,21 @@ mod query {
         assert_eq!(sql, "SELECT name, age FROM `users`");
         let sql = User::query().select(json!("name, age")).distinct().to_sql();
         assert_eq!(sql, "SELECT DISTINCT name, age FROM `users`");
+        // count
+        let sql = User::query().count().to_sql();
+        assert_eq!(sql, "SELECT COUNT(`users`.*) FROM `users`");
+        // sum
+        let sql = User::query().sum("price").to_sql();
+        assert_eq!(sql, "SELECT SUM(`users`.`price`) FROM `users`");
+        // avg
+        let sql = User::query().avg("price").to_sql();
+        assert_eq!(sql, "SELECT AVG(`users`.`price`) FROM `users`");
+        // min
+        let sql = User::query().min("price").to_sql();
+        assert_eq!(sql, "SELECT MIN(`users`.`price`) FROM `users`");
+        // min
+        let sql = User::query().max("price").to_sql();
+        assert_eq!(sql, "SELECT MAX(`users`.`price`) FROM `users`");
     }
     #[test]
     fn test_where() {

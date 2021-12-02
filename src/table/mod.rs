@@ -77,6 +77,46 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn count(&mut self) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.count();
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn sum(&mut self, column_name: &str) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.sum(column_name);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn avg(&mut self, column_name: &str) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.avg(column_name);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn min(&mut self, column_name: &str) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.min(column_name);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn max(&mut self, column_name: &str) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.max(column_name);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
     pub fn distinct(&mut self) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.distinct();
