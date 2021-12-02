@@ -189,6 +189,12 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
+    pub fn paginate(&mut self, page: usize, page_size: usize) -> &mut Self {
+        let offset = (page - 1) * page_size;
+        self.limit(page_size);
+        self.offset(offset);
+        self
+    }
     pub fn with_update_manager(&mut self) -> &mut Self {
         if self.update_manager.is_none() {
             self.update_manager = Some(UpdateManager::<M>::default());

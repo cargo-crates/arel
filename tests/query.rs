@@ -82,13 +82,12 @@ mod query {
         assert_eq!(sql, "SELECT `users`.* FROM `users` ORDER BY `users`.`name` DESC, age ASC");
     }
     #[test]
-    fn test_limit() {
+    fn test_limit_offset() {
         let sql = User::query().limit(10).to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` LIMIT 10");
-    }
-    #[test]
-    fn test_offset() {
         let sql = User::query().offset(10).to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` OFFSET 10");
+        let sql = User::query().paginate(5, 10).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` LIMIT 10 OFFSET 40");
     }
 }
