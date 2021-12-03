@@ -47,6 +47,10 @@ impl<M> UpdateStatement<M> where M: ModelAble {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
+    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
+        self.wheres.push(Where::<M>::new_column_range(column_name, range, ops));
+        self
+    }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {
         if self.r#wheres.len() == 0 {
             None

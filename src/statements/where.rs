@@ -1,4 +1,5 @@
-use serde_json::{Value as Json};
+use std::ops::{Bound, RangeBounds};
+use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
@@ -60,7 +61,10 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
                                 else {
                                     vec.push(SqlLiteral::new(format!("{} {}", table_column_name, between_sql)));
                                 }
-                            }
+                            },
+                            Json::String(_) => {
+                                vec.append(&mut StatementAble::to_sql_literals_default(self))
+                            },
                             _ => panic!("Error: Not Support")
                         }
                     } else if self.ops.is_not {
@@ -89,6 +93,62 @@ impl<M> Where<M> where M: ModelAble {
     pub fn new(value: Json, ops: Ops) -> Self {
         Self {
             value,
+            ops,
+            _marker: PhantomData,
+        }
+    }
+    pub fn new_column_range<T: ToString>(column_name: &str, range: impl RangeBounds<T>, ops: Ops) -> Self {
+        let table_column_name = methods::table_column_name::<M>(column_name);
+        let mut raw_sql;
+
+        if ops.is_between {
+            match range.start_bound() {
+                Bound::Unbounded => panic!("Error: Not Support"),
+                Bound::Included(start) => {
+                    match range.end_bound() {
+                        Bound::Unbounded => panic!("Error: Not Support"),
+                        Bound::Included(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, start.to_string(), end.to_string()),
+                        Bound::Excluded(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, start.to_string(), end.to_string()),
+                    }
+                },
+                Bound::Excluded(start) => {
+                    match range.end_bound() {
+                        Bound::Unbounded => panic!("Error: Not Support"),
+                        Bound::Included(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, start.to_string(), end.to_string()),
+                        Bound::Excluded(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, start.to_string(), end.to_string()),
+                    }
+                },
+            }
+        } else {
+            match range.start_bound() {
+                Bound::Unbounded => {
+                    match range.end_bound() {
+                        Bound::Unbounded => panic!("Error: Not Support"),
+                        Bound::Included(end) => raw_sql = format!("{} <= {}", table_column_name, end.to_string()),
+                        Bound::Excluded(end) => raw_sql = format!("{} < {}", table_column_name, end.to_string()),
+                    }
+                }
+                Bound::Included(start) => {
+                    raw_sql = format!("{} >= {}", table_column_name, start.to_string());
+                    match range.end_bound() {
+                        Bound::Unbounded => (),
+                        Bound::Included(end) => raw_sql = format!("{} AND {} <= {}", raw_sql, table_column_name, end.to_string()),
+                        Bound::Excluded(end) => raw_sql = format!("{} AND {} < {}", raw_sql, table_column_name, end.to_string()),
+                    }
+                },
+                Bound::Excluded(start) => {
+                    raw_sql = format!("{} > {}", table_column_name, start.to_string());
+                    match range.end_bound() {
+                        Bound::Unbounded => (),
+                        Bound::Included(end) => raw_sql = format!("{} AND {} <= {}", raw_sql, table_column_name, end.to_string()),
+                        Bound::Excluded(end) => raw_sql = format!("{} AND {} < {}", raw_sql, table_column_name, end.to_string()),
+                    }
+                },
+            }
+        }
+
+        Self {
+            value: json!(raw_sql),
             ops,
             _marker: PhantomData,
         }
@@ -204,6 +264,11 @@ mod tests {
         assert_eq!(r#where.to_sql(), "(`users`.`age` NOT BETWEEN 18 AND 30 OR `users`.`name` != 'Tom')");
         let r#where = Where::<User>::new(json!(["age", 18, 30]), Ops::new(JoinType::Or, true, true));
         assert_eq!(r#where.to_sql(), "(`users`.`'age'` NOT BETWEEN 18 AND 30)");
+        // range
+        let r#where = Where::<User>::new_column_range("age", ..18, Ops::new(JoinType::And, false, false));
+        assert_eq!(r#where.to_sql(), "(`users`.`age` < 18)");
+        let r#where = Where::<User>::new_column_range("age", 0..18, Ops::new(JoinType::And, false, true));
+        assert_eq!(r#where.to_sql(), "`users`.`age` BETWEEN 0 AND 18");
     }
 }
 

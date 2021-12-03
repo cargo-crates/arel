@@ -87,6 +87,10 @@ impl<M> SelectCore<M> where M: ModelAble {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
+    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
+        self.wheres.push(Where::<M>::new_column_range(column_name, range, ops));
+        self
+    }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {
         if self.r#wheres.len() == 0 {
             None
@@ -107,6 +111,10 @@ impl<M> SelectCore<M> where M: ModelAble {
     }
     pub fn having(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
         self.havings.push(Having::<M>::new(condition, ops));
+        self
+    }
+    pub fn having_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
+        self.havings.push(Having::<M>::new_column_range(column_name, range, ops));
         self
     }
     pub fn get_having_sql(&self) -> Option<SqlLiteral> {

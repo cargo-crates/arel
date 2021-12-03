@@ -88,6 +88,26 @@ impl<M> Table<M> where M: ModelAble {
     pub fn where_or_not_between(&mut self, condition: Json) -> &mut Self {
         self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true))
     }
+    fn _where_range_statement<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
+        if let Some(select_manager) = &mut self.select_manager {
+            select_manager.where_range(column_name, range, ops);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.where_range(column_name, range, ops);
+        } else if let Some(delete_manager) = &mut self.delete_manager {
+            delete_manager.where_range(column_name, range, ops);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
+        self._where_range_statement(column_name, range, r#where::Ops::new(r#where::JoinType::And, false, false));
+        self
+    }
+    pub fn where_range_between<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
+        self._where_range_statement(column_name, range, r#where::Ops::new(r#where::JoinType::And, false, true));
+        self
+    }
     pub fn with_select_manager(&mut self) -> &mut Self {
         if self.select_manager.is_none() {
             self.select_manager = Some(SelectManager::<M>::default());

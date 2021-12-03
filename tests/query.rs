@@ -61,6 +61,13 @@ mod query {
             .r#where(json!({"name": "Tom"}))
             .to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` left join orders on users.id = orders.user_id WHERE `users`.`name` = 'Tom'");
+
+        // range
+        let sql = User::query().where_range("age", 18..25).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE (`users`.`age` >= 18 AND `users`.`age` < 25)");
+        // range_between
+        let sql = User::query().where_range_between("age", 18..25).to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`age` BETWEEN 18 AND 25");
     }
     #[test]
     fn test_lock() {
