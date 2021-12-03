@@ -14,6 +14,7 @@ use crate::traits::ModelAble;
 use std::marker::PhantomData;
 use crate::collectors::SqlString;
 use crate::visitors;
+use crate::statements::{r#where, having};
 // pub trait ManagerStatement<M: ModelAble> {}
 
 #[derive(Clone, Debug)]
@@ -51,29 +52,41 @@ impl<M> Table<M> where M: ModelAble {
             _marker: PhantomData
         }
     }
-    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+    fn _where_statement(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
-            select_manager.r#where(condition, false);
+            select_manager.r#where(condition, ops);
         } else if let Some(update_manager) = &mut self.update_manager {
-            update_manager.r#where(condition, false);
+            update_manager.r#where(condition, ops);
         } else if let Some(delete_manager) = &mut self.delete_manager {
-            delete_manager.r#where(condition, false);
+            delete_manager.r#where(condition, ops);
         } else {
             panic!("Not support");
         }
         self
     }
+    pub fn r#where(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, false))
+    }
     pub fn where_not(&mut self, condition: Json) -> &mut Self {
-        if let Some(select_manager) = &mut self.select_manager {
-            select_manager.r#where(condition, true);
-        } else if let Some(update_manager) = &mut self.update_manager {
-            update_manager.r#where(condition, true);
-        } else if let Some(delete_manager) = &mut self.delete_manager {
-            delete_manager.r#where(condition, true);
-        } else {
-            panic!("Not support");
-        }
-        self
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, false))
+    }
+    pub fn where_between(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, true))
+    }
+    pub fn where_not_between(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, true))
+    }
+    pub fn where_or(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, false))
+    }
+    pub fn where_or_not(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, false))
+    }
+    pub fn where_or_between(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, true))
+    }
+    pub fn where_or_not_between(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true))
     }
     pub fn with_select_manager(&mut self) -> &mut Self {
         if self.select_manager.is_none() {
@@ -161,21 +174,37 @@ impl<M> Table<M> where M: ModelAble {
         }
         self
     }
-    pub fn having(&mut self, condition: Json) -> &mut Self {
+    pub fn _having_statement(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
-            select_manager.having(condition, false);
+            select_manager.having(condition, ops);
         } else {
             panic!("Not support");
         }
         self
     }
+    pub fn having(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, false))
+    }
     pub fn having_not(&mut self, condition: Json) -> &mut Self {
-        if let Some(select_manager) = &mut self.select_manager {
-            select_manager.having(condition, true);
-        } else {
-            panic!("Not support");
-        }
-        self
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, false))
+    }
+    pub fn having_between(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, true))
+    }
+    pub fn having_not_between(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, true))
+    }
+    pub fn having_or(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false))
+    }
+    pub fn having_or_not(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, false))
+    }
+    pub fn having_or_between(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false))
+    }
+    pub fn having_or_not_between(&mut self, condition: Json) -> &mut Self {
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, true))
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {

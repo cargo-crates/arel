@@ -1,4 +1,4 @@
-use crate::statements::{StatementAble, Where, Update, helpers::and};
+use crate::statements::{StatementAble, r#where::{self, Where}, Update, helpers::and};
 use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use std::default::Default;
@@ -43,8 +43,8 @@ impl<M> UpdateStatement<M> where M: ModelAble {
             None
         }
     }
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.wheres.push(Where::<M>::new(condition, is_not));
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {

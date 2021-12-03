@@ -11,8 +11,15 @@ use serde_json::json;
 struct User {}
 impl ModelAble for User {}
 
-let sql = User::query().r#where(json!({"name": "Tom"})).r#where(json!(["active = ?", true])).to_sql();
-assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1");
+let sql = User::query()
+    .where(json!({"name": "Tom"}))
+    .where(json!(["active = ?", true]))
+    .where_not(json!({"status": [1, 2, 3]}))
+    .where_between(json!({"created_at": ["2021-12-01 00:00:00", "2021-12-31 23:59:59"]}))
+    .where_or(json!({"login": false, "phone": null}))
+    .distinct()
+    .to_sql();
+assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND (active = 1) AND `users`.`status` NOT IN (1, 2, 3) AND `users`.`created_at` BETWEEN '2021-12-01 00:00:00' AND '2021-12-31 23:59:59' AND (`users`.`login` = 0 OR `users`.`phone` IS NULL)");
 ```
 
 ---

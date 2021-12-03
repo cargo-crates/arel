@@ -2,7 +2,7 @@ mod join_source;
 pub use join_source::JoinSource;
 
 use serde_json::{Value as Json};
-use crate::statements::{StatementAble, select::{Select, Op}, Where, Group, Having, helpers::{self, and}};
+use crate::statements::{StatementAble, select::{Select, Op}, r#where::{self, Where}, Group, having::{self, Having}, helpers::{self, and}};
 use std::default::Default;
 use crate::traits::ModelAble;
 use std::marker::PhantomData;
@@ -83,8 +83,8 @@ impl<M> SelectCore<M> where M: ModelAble {
             None
         }
     }
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.wheres.push(Where::<M>::new(condition, is_not));
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {
@@ -105,8 +105,8 @@ impl<M> SelectCore<M> where M: ModelAble {
             Some(SqlLiteral::new(helpers::inject_join(&self.groups, ", ")))
         }
     }
-    pub fn having(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.havings.push(Having::<M>::new(condition, is_not));
+    pub fn having(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
+        self.havings.push(Having::<M>::new(condition, ops));
         self
     }
     pub fn get_having_sql(&self) -> Option<SqlLiteral> {

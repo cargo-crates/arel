@@ -2,7 +2,7 @@ use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::Value as Json;
 use crate::traits::ModelAble;
-use crate::statements::{StatementAble, Where, Order, Limit, Offset, helpers::{self, and}};
+use crate::statements::{StatementAble, r#where::{self, Where}, Order, Limit, Offset, helpers::{self, and}};
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
@@ -27,8 +27,8 @@ impl<M> Default for DeleteStatement<M> where M: ModelAble {
 }
 
 impl<M> DeleteStatement<M> where M: ModelAble {
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.wheres.push(Where::<M>::new(condition, is_not));
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
     pub fn get_where_sql(&self) -> Option<SqlLiteral> {

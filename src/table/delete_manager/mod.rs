@@ -5,6 +5,7 @@ use serde_json::Value as Json;
 use std::default::Default;
 use std::marker::PhantomData;
 use crate::traits::ModelAble;
+use crate::statements::{r#where};
 
 #[derive(Debug, Clone)]
 pub struct DeleteManager<M: ModelAble> {
@@ -28,8 +29,8 @@ impl<M> DeleteManager<M> where M: ModelAble {
     // fn ctx(&self) -> &SelectCore<M> {
     //     self.ast.cores.last().unwrap()
     // }
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.ctx_mut().r#where(condition, is_not);
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.ctx_mut().r#where(condition, ops);
         self
     }
     // pub fn get_where_sql(&self) -> Option<SqlLiteral> {

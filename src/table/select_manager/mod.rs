@@ -6,6 +6,7 @@ use std::default::Default;
 use std::marker::PhantomData;
 use crate::traits::ModelAble;
 use select_statement::SelectCore;
+use crate::statements::{r#where, having};
 
 #[derive(Debug, Clone)]
 pub struct SelectManager<M: ModelAble> {
@@ -65,8 +66,8 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().joins(condition);
         self
     }
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.ctx_mut().r#where(condition, is_not);
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.ctx_mut().r#where(condition, ops);
         self
     }
     // pub fn get_where_sql(&self) -> Option<SqlLiteral> {
@@ -76,8 +77,8 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().group(condition);
         self
     }
-    pub fn having(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.ctx_mut().having(condition, is_not);
+    pub fn having(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
+        self.ctx_mut().having(condition, ops);
         self
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {

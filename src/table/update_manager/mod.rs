@@ -5,6 +5,7 @@ use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::{Value as Json};
 use crate::traits::ModelAble;
+use crate::statements::{r#where::{self}};
 
 #[derive(Debug, Clone)]
 pub struct UpdateManager<M: ModelAble> {
@@ -29,8 +30,8 @@ impl<M> UpdateManager<M> where M: ModelAble {
         self.ctx_mut().update(condition);
         self
     }
-    pub fn r#where(&mut self, condition: Json, is_not: bool) -> &mut Self {
-        self.ctx_mut().r#where(condition, is_not);
+    pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
+        self.ctx_mut().r#where(condition, ops);
         self
     }
 }

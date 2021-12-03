@@ -1,1 +1,1 @@
-pub use crate::statements::Where as Having;
+pub use crate::statements::r#where::{JoinType, Ops, Where as Having};
