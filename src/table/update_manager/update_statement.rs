@@ -1,5 +1,5 @@
 use crate::statements::{StatementAble, r#where::{self, Where}, Update, helpers::and};
-use serde_json::{Value as Json};
+use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
 use crate::traits::ModelAble;
@@ -31,6 +31,20 @@ impl<M> UpdateStatement<M> where M: ModelAble {
     pub fn update(&mut self, condition: Json) -> &mut Self {
         self.update = Some(Update::new(condition));
         self
+    }
+    pub fn increment(&mut self, column_name: &str, by: isize) -> &mut Self {
+        let table_column_name = methods::table_column_name::<M>(column_name);
+        let mut raw_sql = format!("{} = COALESCE({}, 0)", table_column_name, table_column_name);
+        if by >= 0 {
+            raw_sql.push_str(&format!(" + {}", by));
+        } else {
+            raw_sql.push_str(&format!(" - {}", by.abs()));
+        }
+        self.update = Some(Update::<M>::new(json!(raw_sql)));
+        self
+    }
+    pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
+        self.increment(column_name, -by)
     }
     pub fn get_update_sql(&self) -> Option<SqlLiteral> {
         if let Some(update) = &self.update {

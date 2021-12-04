@@ -30,6 +30,14 @@ impl<M> UpdateManager<M> where M: ModelAble {
         self.ctx_mut().update(condition);
         self
     }
+    pub fn increment(&mut self, column_name: &str, by: isize) -> &mut Self {
+        self.ctx_mut().increment(column_name, by);
+        self
+    }
+    pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
+        self.ctx_mut().decrement(column_name, by);
+        self
+    }
     pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
         self.ctx_mut().r#where(condition, ops);
         self

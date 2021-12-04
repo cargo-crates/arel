@@ -92,7 +92,7 @@ impl<M> Table<M> where M: ModelAble {
     pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = r#where::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
-        self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, true, true));
+        self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, false, true));
         self
     }
     pub fn with_select_manager(&mut self) -> &mut Self {
@@ -216,7 +216,7 @@ impl<M> Table<M> where M: ModelAble {
     pub fn having_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = having::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
-        self._having_statement(json!(raw_sql), having::Ops::new(r#where::JoinType::And, true, true));
+        self._having_statement(json!(raw_sql), having::Ops::new(r#where::JoinType::And, false, true));
         self
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
@@ -271,6 +271,24 @@ impl<M> Table<M> where M: ModelAble {
         self.with_update_manager();
         if let Some(update_manager) = &mut self.update_manager {
             update_manager.update(condition);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn increment(&mut self, column_name: &str, by: isize) -> &mut Self {
+        self.with_update_manager();
+        if let Some(update_manager) = &mut self.update_manager {
+            update_manager.increment(column_name, by);
+        } else {
+            panic!("Not support");
+        }
+        self
+    }
+    pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
+        self.with_update_manager();
+        if let Some(update_manager) = &mut self.update_manager {
+            update_manager.decrement(column_name, by);
         } else {
             panic!("Not support");
         }

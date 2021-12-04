@@ -11,9 +11,7 @@ mod update {
     use super::*;
     #[test]
     fn test_update() {
-        let sql = User::update_all(json!({
-                "name": "Tom"
-            }))
+        let sql = User::update_all(json!({"name": "Tom"}))
             .r#where(json!({"x": 1}))
             .where_range("age", ..18)
             .where_range("login_time", 0..=3)
@@ -21,21 +19,23 @@ mod update {
         assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`x` = 1 AND `users`.`age` < 18 AND `users`.`login_time` BETWEEN 0 AND 3");
 
         let sql = User::query()
-            .r#where(json!({
-                "x": 1
-            })).update_all(json!({
-                "name": "Tom"
-            })).to_sql();
+            .r#where(json!({"x": 1}))
+            .update_all(json!({"name": "Tom"}))
+            .to_sql();
         assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_subquery_temp)");
 
         let mut query = User::query();
         query.r#where(json!({"x": 1}));
-        let sql = query.clone().update_all(json!({
-                "name": "Tom"
-            })).to_sql();
+        let sql = query.clone().update_all(json!({"name": "Tom"})).to_sql();
         assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`id` IN (SELECT `id` FROM (SELECT `users`.`id` FROM `users` WHERE `users`.`x` = 1) AS __arel_subquery_temp)");
 
         let sql = query.to_sql();
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`x` = 1");
+
+
+        let sql = User::table().increment("x", 2).r#where(json!({"id": 1})).to_sql();
+        assert_eq!(sql, "UPDATE `users` SET `users`.`x` = COALESCE(`users`.`x`, 0) + 2 WHERE `users`.`id` = 1");
+        let sql = User::table().decrement("x", 2).r#where(json!({"id": 1})).to_sql();
+        assert_eq!(sql, "UPDATE `users` SET `users`.`x` = COALESCE(`users`.`x`, 0) - 2 WHERE `users`.`id` = 1");
     }
 }

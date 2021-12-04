@@ -1,6 +1,6 @@
 use std::default::Default;
 use std::marker::PhantomData;
-use serde_json::Value as Json;
+use serde_json::{Value as Json};
 use crate::traits::ModelAble;
 use crate::statements::{StatementAble, r#where::{self, Where}, Order, Limit, Offset, helpers::{self, and}};
 use crate::nodes::{SqlLiteral};
