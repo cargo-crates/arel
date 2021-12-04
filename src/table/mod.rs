@@ -15,6 +15,7 @@ use std::marker::PhantomData;
 use crate::collectors::SqlString;
 use crate::visitors;
 use crate::statements::{r#where, having};
+use crate::methods;
 // pub trait ManagerStatement<M: ModelAble> {}
 
 #[derive(Clone, Debug)]
@@ -88,24 +89,10 @@ impl<M> Table<M> where M: ModelAble {
     pub fn where_or_not_between(&mut self, condition: Json) -> &mut Self {
         self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true))
     }
-    fn _where_range_statement<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
-        if let Some(select_manager) = &mut self.select_manager {
-            select_manager.where_range(column_name, range, ops);
-        } else if let Some(update_manager) = &mut self.update_manager {
-            update_manager.where_range(column_name, range, ops);
-        } else if let Some(delete_manager) = &mut self.delete_manager {
-            delete_manager.where_range(column_name, range, ops);
-        } else {
-            panic!("Not support");
-        }
-        self
-    }
     pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
-        self._where_range_statement(column_name, range, r#where::Ops::new(r#where::JoinType::And, false, false));
-        self
-    }
-    pub fn where_range_between<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
-        self._where_range_statement(column_name, range, r#where::Ops::new(r#where::JoinType::And, false, true));
+        let table_column_name = methods::table_column_name::<M>(column_name);
+        let raw_sql = r#where::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
+        self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, true, true));
         self
     }
     pub fn with_select_manager(&mut self) -> &mut Self {

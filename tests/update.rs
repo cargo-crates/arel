@@ -16,9 +16,9 @@ mod update {
             }))
             .r#where(json!({"x": 1}))
             .where_range("age", ..18)
-            .where_range_between("login_time", 0..3)
+            .where_range("login_time", 0..=3)
             .to_sql();
-        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`x` = 1 AND (`users`.`age` < 18) AND `users`.`login_time` BETWEEN 0 AND 3");
+        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`x` = 1 AND `users`.`age` < 18 AND `users`.`login_time` BETWEEN 0 AND 3");
 
         let sql = User::query()
             .r#where(json!({

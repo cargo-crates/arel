@@ -34,8 +34,4 @@ impl<M> UpdateManager<M> where M: ModelAble {
         self.ctx_mut().r#where(condition, ops);
         self
     }
-    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
-        self.ctx_mut().where_range(column_name, range, ops);
-        self
-    }
 }

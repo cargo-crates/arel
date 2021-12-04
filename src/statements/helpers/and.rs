@@ -20,6 +20,6 @@ mod tests {
             Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
             Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),
         ];
-        assert_eq!(super::to_sql(&wheres), "`users`.`profile` IS NULL AND (name = 'Tom')");
+        assert_eq!(super::to_sql(&wheres), "`users`.`profile` IS NULL AND name = 'Tom'");
     }
 }

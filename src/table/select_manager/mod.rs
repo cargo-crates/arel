@@ -70,10 +70,6 @@ impl<M> SelectManager<M> where M: ModelAble {
         self.ctx_mut().r#where(condition, ops);
         self
     }
-    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
-        self.ctx_mut().where_range(column_name, range, ops);
-        self
-    }
     // pub fn get_where_sql(&self) -> Option<SqlLiteral> {
     //     self.ctx().get_where_sql()
     // }
@@ -83,10 +79,6 @@ impl<M> SelectManager<M> where M: ModelAble {
     }
     pub fn having(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
         self.ctx_mut().having(condition, ops);
-        self
-    }
-    pub fn having_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>, ops: r#where::Ops) -> &mut Self {
-        self.ctx_mut().having_range(column_name, range, ops);
         self
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
