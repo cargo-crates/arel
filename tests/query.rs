@@ -85,8 +85,10 @@ mod query {
 
         let sql = User::query().group(json!("age"))
             .having_not(json!({"x": 1}))
-            .having(json!(["y > ?", 2])).to_sql();
-        assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY age HAVING `users`.`x` != 1 AND y > 2");
+            .having(json!(["y > ?", 2]))
+            .having_range("z", 18..)
+            .to_sql();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY age HAVING `users`.`x` != 1 AND y > 2 AND `users`.`z` >= 18");
     }
     #[test]
     fn test_order() {

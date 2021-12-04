@@ -117,9 +117,11 @@ let sql = User::query().group(json!(["name", "email"])).group(json!("age")).to_s
 assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY `users`.`name`, `users`.`email`, age");
 
 let sql = User::query().group(json!("age"))
-.having_not(json!({"x": 1}))
-.having(json!(["y > ?", 2])).to_sql();
-assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY age HAVING `users`.`x` != 1 AND (y > 2)");
+    .having_not(json!({"x": 1}))
+    .having(json!(["y > ?", 2]))
+    .having_range("z", 18..)
+    .to_sql();
+assert_eq!(sql, "SELECT `users`.* FROM `users` GROUP BY age HAVING `users`.`x` != 1 AND y > 2 AND `users`.`z` >= 18");
 ```
 </details>
 
