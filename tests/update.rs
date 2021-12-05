@@ -15,8 +15,11 @@ mod update {
             .r#where(json!({"x": 1}))
             .where_range("age", ..18)
             .where_range("login_time", 0..=3)
+            .order(json!("id desc"))
+            .offset(1)
+            .limit(5)
             .to_sql().unwrap();
-        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`x` = 1 AND `users`.`age` < 18 AND `users`.`login_time` BETWEEN 0 AND 3");
+        assert_eq!(sql, "UPDATE `users` SET `users`.`name` = 'Tom' WHERE `users`.`x` = 1 AND `users`.`age` < 18 AND `users`.`login_time` BETWEEN 0 AND 3 ORDER BY id desc LIMIT 5 OFFSET 1");
 
         let sql = User::query()
             .r#where(json!({"x": 1}))

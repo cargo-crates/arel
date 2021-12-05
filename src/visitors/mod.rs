@@ -61,6 +61,15 @@ pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager
         collector.push_str(" WHERE ").push_str(&sql_literal.raw_sql);
         exists_where = true;
     }
+    if let Some(sql_literal) = ast.get_order_sql()? {
+        collector.push_str(" ORDER BY ").push_str(&sql_literal.raw_sql);
+    }
+    if let Some(sql_literal) = ast.get_limit_sql()? {
+        collector.push_str(" ").push_str(&sql_literal.raw_sql);
+    }
+    if let Some(sql_literal) = ast.get_offset_sql()? {
+        collector.push_str(" ").push_str(&sql_literal.raw_sql);
+    }
     if let Some(subquery) = accept_subquery_select_manager(for_update_select_manager)? {
         collector.push_str(if exists_where { " AND " } else { " WHERE " });
         collector.push_str(&subquery);

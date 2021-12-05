@@ -222,6 +222,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn order(&mut self, condition: Json) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.order(condition);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.order(condition);
         } else if let Some(delete_manager) = &mut self.delete_manager {
             delete_manager.order(condition);
         } else {
@@ -232,6 +234,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn limit(&mut self, condition: usize) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.limit(condition);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.limit(condition);
         } else if let Some(delete_manager) = &mut self.delete_manager {
             delete_manager.limit(condition);
         } else {
@@ -242,6 +246,8 @@ impl<M> Table<M> where M: ModelAble {
     pub fn offset(&mut self, condition: usize) -> &mut Self {
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.offset(condition);
+        } else if let Some(update_manager) = &mut self.update_manager {
+            update_manager.offset(condition);
         } else if let Some(delete_manager) = &mut self.delete_manager {
             delete_manager.offset(condition);
         } else {

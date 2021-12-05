@@ -42,4 +42,16 @@ impl<M> UpdateManager<M> where M: ModelAble {
         self.ctx_mut().r#where(condition, ops);
         self
     }
+    pub fn order(&mut self, condition: Json) -> &mut Self {
+        self.ast.order(condition);
+        self
+    }
+    pub fn limit(&mut self, condition: usize) -> &mut Self {
+        self.ast.limit(condition);
+        self
+    }
+    pub fn offset(&mut self, condition: usize) -> &mut Self {
+        self.ast.offset(condition);
+        self
+    }
 }

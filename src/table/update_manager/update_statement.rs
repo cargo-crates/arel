@@ -1,4 +1,4 @@
-use crate::statements::{StatementAble, r#where::{self, Where}, Update, helpers::and};
+use crate::statements::{StatementAble, r#where::{self, Where}, Order, Limit, Offset, Update, helpers::{self, and}};
 use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
@@ -11,9 +11,9 @@ pub struct UpdateStatement<M: ModelAble> {
     // @relation = nil
     update: Option<Update<M>>,
     pub wheres: Vec<Where<M>>,
-    // @orders   = []
-    // @limit    = nil
-    // @offset   = nil
+    orders: Vec<Order<M>>,
+    limit: Option<Limit<M>>,
+    offset: Option<Offset<M>>,
     _marker: PhantomData<M>,
 }
 
@@ -22,6 +22,9 @@ impl<M> Default for UpdateStatement<M> where M: ModelAble {
         Self {
             update: None,
             wheres: vec![],
+            orders: vec![],
+            limit: None,
+            offset: None,
             _marker: PhantomData,
         }
     }
@@ -66,6 +69,39 @@ impl<M> UpdateStatement<M> where M: ModelAble {
             Ok(None)
         } else {
             Ok(Some(SqlLiteral::new(format!("{}", and::to_sql(&self.r#wheres)?))))
+        }
+    }
+    pub fn order(&mut self, condition: Json) -> &mut Self {
+        self.orders.push(Order::new(condition));
+        self
+    }
+    pub fn get_order_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+        if self.orders.len() == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")?)))
+        }
+    }
+    pub fn limit(&mut self, condition: usize) -> &mut Self {
+        self.limit = Some(Limit::new(condition));
+        self
+    }
+    pub fn get_limit_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+        if let Some(limit) = &self.limit {
+            Ok(Some(SqlLiteral::new(limit.to_sql()?)))
+        } else {
+            Ok(None)
+        }
+    }
+    pub fn offset(&mut self, condition: usize) -> &mut Self {
+        self.offset = Some(Offset::new(condition));
+        self
+    }
+    pub fn get_offset_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+        if let Some(offset) = &self.offset {
+            Ok(Some(SqlLiteral::new(offset.to_sql()?)))
+        } else {
+            Ok(None)
         }
     }
 }
