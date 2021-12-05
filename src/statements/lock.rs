@@ -13,13 +13,13 @@ impl<M> StatementAble<M> for Lock<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql(&self) -> String {
+    fn to_sql(&self) -> anyhow::Result<String> {
         self.to_sql_with_concat(" ")
     }
-    fn json_value_sql(&self, json_value: &Json) -> String {
+    fn json_value_sql(&self, json_value: &Json) -> anyhow::Result<String> {
         match json_value {
             Json::String(json_string) => {
-                format!("{}", json_string)
+                Ok(format!("{}", json_string))
             },
             _ => StatementAble::json_value_sql_default(self, json_value)
         }
@@ -46,11 +46,11 @@ mod tests {
         impl ModelAble for User {}
 
         let lock = Lock::<User>::new(json!("FOR UPDATE"));
-        assert_eq!(lock.to_sql(), "FOR UPDATE");
+        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
 
         let lock = Lock::<User>::new(json!(["FOR UPDATE"]));
-        assert_eq!(lock.to_sql(), "FOR UPDATE");
+        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
         let lock = Lock::<User>::new(json!(["FOR ?", "UPDATE"]));
-        assert_eq!(lock.to_sql(), "FOR UPDATE");
+        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
     }
 }

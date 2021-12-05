@@ -15,7 +15,7 @@ impl<M> StatementAble<M> for Insert<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -25,17 +25,17 @@ impl<M> StatementAble<M> for Insert<M> where M: ModelAble {
                     for column_name in json_object.keys() {
                         keys.push(format!("`{}`", column_name));
                         let json_value = json_object.get(column_name).unwrap();
-                        values.push(self.json_value_sql(json_value));
+                        values.push(self.json_value_sql(json_value)?);
                     }
                     vec.push(SqlLiteral::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
                 },
-                _ => panic!("Error: Not Support")
+                _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }
         // Ok(vec.join(", "))
-        vec
+        Ok(vec)
     }
-    fn to_sql(&self) -> String {
+    fn to_sql(&self) -> anyhow::Result<String> {
         self.to_sql_with_concat("")
     }
 }

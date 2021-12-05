@@ -14,7 +14,7 @@ mod insert {
         let sql = User::create(json!({
             "name": "Tom",
             "age": 18,
-        })).to_sql();
+        })).to_sql().unwrap();
         assert_eq!(sql, "INSERT INTO `users` (`age`, `name`) VALUES (18, 'Tom')");
     }
 }

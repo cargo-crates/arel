@@ -11,8 +11,8 @@ pub struct Limit<M: ModelAble> {
 
 impl<M> StatementAble<M> for Limit<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> { None }
-    fn to_sql(&self) -> String {
-        format!("LIMIT {}", self.value)
+    fn to_sql(&self) -> anyhow::Result<String> {
+        Ok(format!("LIMIT {}", self.value))
     }
 }
 
@@ -37,6 +37,6 @@ mod tests {
         impl ModelAble for User {}
 
         let limit = Limit::<User>::new(10);
-        assert_eq!(limit.to_sql(), "LIMIT 10");
+        assert_eq!(limit.to_sql().unwrap(), "LIMIT 10");
     }
 }

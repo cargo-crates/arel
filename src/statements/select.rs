@@ -27,7 +27,7 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -37,19 +37,19 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
                             let table_column_name = methods::table_column_name::<M>(column_name);
                             vec.push(SqlLiteral::new(format!("{}", table_column_name)));
                         } else {
-                            panic!("Error: Not Support");
+                            return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                         }
                     }
                 },
-                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)),
-                _ => panic!("Error: Not Support")
+                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)?),
+                _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }
         // Ok(vec.join(" AND "))
-        vec
+        Ok(vec)
     }
-    fn to_sql(&self) -> String {
-        let mut sql = self.to_sql_with_concat(", ");
+    fn to_sql(&self) -> anyhow::Result<String> {
+        let mut sql = self.to_sql_with_concat(", ")?;
         if self.distinct {
             sql = format!("DISTINCT {}", &sql);
         }
@@ -60,23 +60,23 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
                 },
                 Op::Sum(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("SUM({})", &select.to_sql());
+                    sql = format!("SUM({})", &select.to_sql()?);
                 },
                 Op::Avg(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("AVG({})", &select.to_sql());
+                    sql = format!("AVG({})", &select.to_sql()?);
                 },
                 Op::Min(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("MIN({})", &select.to_sql());
+                    sql = format!("MIN({})", &select.to_sql()?);
                 },
                 Op::Max(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("MAX({})", &select.to_sql());
+                    sql = format!("MAX({})", &select.to_sql()?);
                 }
             }
         }
-        sql
+        Ok(sql)
     }
 }
 
@@ -113,9 +113,9 @@ mod tests {
         impl ModelAble for User {}
 
         let select = Select::<User>::new(json!("name, age"), false);
-        assert_eq!(select.to_sql(), "name, age");
+        assert_eq!(select.to_sql().unwrap(), "name, age");
 
         let select = Select::<User>::new(json!(["name", "age"]), false);
-        assert_eq!(select.to_sql(), "`users`.`name`, `users`.`age`");
+        assert_eq!(select.to_sql().unwrap(), "`users`.`name`, `users`.`age`");
     }
 }

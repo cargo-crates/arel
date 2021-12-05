@@ -31,44 +31,44 @@ impl<M> DeleteStatement<M> where M: ModelAble {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
-    pub fn get_where_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_where_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if self.r#wheres.len() == 0 {
-            None
+            Ok(None)
         } else {
-            Some(SqlLiteral::new(and::to_sql(&self.r#wheres)))
+            Ok(Some(SqlLiteral::new(and::to_sql(&self.r#wheres)?)))
         }
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
         self.orders.push(Order::new(condition));
         self
     }
-    pub fn get_order_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_order_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if self.orders.len() == 0 {
-            None
+            Ok(None)
         } else {
-            Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")))
+            Ok(Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")?)))
         }
     }
     pub fn limit(&mut self, condition: usize) -> &mut Self {
         self.limit = Some(Limit::new(condition));
         self
     }
-    pub fn get_limit_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_limit_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if let Some(limit) = &self.limit {
-            Some(SqlLiteral::new(limit.to_sql()))
+            Ok(Some(SqlLiteral::new(limit.to_sql()?)))
         } else {
-            None
+            Ok(None)
         }
     }
     pub fn offset(&mut self, condition: usize) -> &mut Self {
         self.offset = Some(Offset::new(condition));
         self
     }
-    pub fn get_offset_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_offset_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if let Some(offset) = &self.offset {
-            Some(SqlLiteral::new(offset.to_sql()))
+            Ok(Some(SqlLiteral::new(offset.to_sql()?)))
         } else {
-            None
+            Ok(None)
         }
     }
 }

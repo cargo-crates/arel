@@ -11,8 +11,8 @@ pub struct Offset<M: ModelAble> {
 
 impl<M> StatementAble<M> for Offset<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> { None }
-    fn to_sql(&self) -> String {
-        format!("OFFSET {}", self.value)
+    fn to_sql(&self) -> anyhow::Result<String> {
+        Ok(format!("OFFSET {}", self.value))
     }
 }
 
@@ -36,6 +36,6 @@ mod tests {
         impl ModelAble for User {}
 
         let offset = Offset::<User>::new(10);
-        assert_eq!(offset.to_sql(), "OFFSET 10");
+        assert_eq!(offset.to_sql().unwrap(), "OFFSET 10");
     }
 }

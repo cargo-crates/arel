@@ -2,7 +2,7 @@
 use crate::traits::ModelAble;
 use crate::statements::{StatementAble, helpers};
 
-pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> String {
+pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<String> {
     helpers::inject_join(children, " AND ")
 }
 
@@ -20,6 +20,6 @@ mod tests {
             Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
             Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),
         ];
-        assert_eq!(super::to_sql(&wheres), "`users`.`profile` IS NULL AND name = 'Tom'");
+        assert_eq!(super::to_sql(&wheres).unwrap(), "`users`.`profile` IS NULL AND name = 'Tom'");
     }
 }

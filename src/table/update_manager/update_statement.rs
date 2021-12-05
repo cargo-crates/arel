@@ -46,26 +46,26 @@ impl<M> UpdateStatement<M> where M: ModelAble {
     pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
         self.increment(column_name, -by)
     }
-    pub fn get_update_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_update_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if let Some(update) = &self.update {
             let mut sql = "UPDATE ".to_string();
             sql.push_str(&methods::quote_table_name(&M::table_name()));
             sql.push_str(" SET ");
-            sql.push_str(&update.to_sql());
-            Some(SqlLiteral::new(sql))
+            sql.push_str(&update.to_sql()?);
+            Ok(Some(SqlLiteral::new(sql)))
         } else {
-            None
+            Ok(None)
         }
     }
     pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
-    pub fn get_where_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_where_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if self.r#wheres.len() == 0 {
-            None
+            Ok(None)
         } else {
-            Some(SqlLiteral::new(format!("{}", and::to_sql(&self.r#wheres))))
+            Ok(Some(SqlLiteral::new(format!("{}", and::to_sql(&self.r#wheres)?))))
         }
     }
 }

@@ -16,7 +16,7 @@ impl<M> StatementAble<M> for Group<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -26,18 +26,18 @@ impl<M> StatementAble<M> for Group<M> where M: ModelAble {
                             let table_column_name = methods::table_column_name::<M>(column_name);
                             vec.push(SqlLiteral::new(format!("{}", table_column_name)));
                         } else {
-                            panic!("Error: Not Support");
+                            return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                         }
                     }
                 },
-                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)),
-                _ => panic!("Error: Not Support")
+                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)?),
+                _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }
         // Ok(vec.join(" AND "))
-        vec
+        Ok(vec)
     }
-    fn to_sql(&self) -> String {
+    fn to_sql(&self) -> anyhow::Result<String> {
         self.to_sql_with_concat(", ")
     }
 }
@@ -71,9 +71,9 @@ mod tests {
         impl ModelAble for User {}
 
         let group = Group::<User>::new(json!("name, age"));
-        assert_eq!(group.to_sql(), "name, age");
+        assert_eq!(group.to_sql().unwrap(), "name, age");
 
         let group = Group::<User>::new(json!(["name", "age"]));
-        assert_eq!(group.to_sql(), "`users`.`name`, `users`.`age`");
+        assert_eq!(group.to_sql().unwrap(), "`users`.`name`, `users`.`age`");
     }
 }

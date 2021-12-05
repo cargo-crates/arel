@@ -25,13 +25,13 @@ impl<M> InsertStatement<M> where M: ModelAble {
         self.insert = Some(Insert::new(condition));
         self
     }
-    pub fn get_insert_sql(&self) -> Option<SqlLiteral> {
+    pub fn get_insert_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
         if let Some(insert) = &self.insert {
             let mut sql = "INSERT INTO ".to_string();
-            sql.push_str(&insert.to_sql());
-            Some(SqlLiteral::new(sql))
+            sql.push_str(&insert.to_sql()?);
+            Ok(Some(SqlLiteral::new(sql)))
         } else {
-            None
+            Ok(None)
         }
     }
 }

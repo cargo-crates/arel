@@ -29,7 +29,7 @@ use crate::traits::ModelAble;
 
 pub trait StatementAble<M: ModelAble> {
     fn json_value(&self) -> Option<&Json>;
-    fn to_sql_literals_default(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals_default(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -46,51 +46,51 @@ pub trait StatementAble<M: ModelAble> {
                                     replace_idx += 1;
                                     self.json_value_sql(use_replace_value)
                                 },
-                                _ => char.to_string()
-                            }).collect::<String>();
+                                _ => Ok(char.to_string())
+                            }).collect::<anyhow::Result<String>>()?;
                         vec.push(SqlLiteral::new(raw_sql));
                     } else {
-                        panic!("Error:  Not Support, 第一个元素必须为字符串")
+                        return Err(anyhow::anyhow!("Error: {:?} Not Support, 第一个元素必须为字符串", self.json_value()))
                     }
                 }
                 _ => {
-                    panic!("Error: Not Support!")
+                    return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                 }
             }
         }
-        vec
+        Ok(vec)
     }
-    fn to_sql_literals(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         self.to_sql_literals_default()
     }
-    fn to_sql_with_concat(&self, concat: &str) -> String {
-        self.to_sql_literals().into_iter().map(|sql_literal| sql_literal.raw_sql).collect::<Vec<String>>().join(&format!("{}", concat))
+    fn to_sql_with_concat(&self, concat: &str) -> anyhow::Result<String> {
+        Ok(self.to_sql_literals()?.into_iter().map(|sql_literal| sql_literal.raw_sql).collect::<Vec<String>>().join(&format!("{}", concat)))
     }
-    fn to_sql(&self) -> String;
-    fn json_value_sql_default(&self, json_value: &Json) -> String {
+    fn to_sql(&self) -> anyhow::Result<String>;
+    fn json_value_sql_default(&self, json_value: &Json) -> anyhow::Result<String> {
         match json_value {
             Json::Array(json_array) => {
                 let mut values = vec![];
                 for json_value in json_array.iter() {
-                    values.push(self.json_value_sql(json_value));
+                    values.push(self.json_value_sql(json_value)?);
                 }
-                format!("({})", values.join(", "))
+                Ok(format!("({})", values.join(", ")))
             },
             Json::String(json_string) => {
-                format!("'{}'", json_string)
+                Ok(format!("'{}'", json_string))
             },
             Json::Number(json_number) => {
-                format!("{}", json_number)
+                Ok(format!("{}", json_number))
             },
             Json::Bool(json_bool) => {
                 let value = if *json_bool {1} else {0};
-                format!("{}", value)
+                Ok(format!("{}", value))
             },
-            Json::Null => { format!("{}", "null") },
-            _ => panic!("Error: Not Support")
+            Json::Null => { Ok(format!("{}", "null")) },
+            _ => Err(anyhow::anyhow!("Error: Not Support"))
         }
     }
-    fn json_value_sql(&self, json_value: &Json) -> String {
+    fn json_value_sql(&self, json_value: &Json) -> anyhow::Result<String> {
         self.json_value_sql_default(json_value)
     }
 }

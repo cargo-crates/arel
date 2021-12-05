@@ -13,13 +13,13 @@ impl<M> StatementAble<M> for Join<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql(&self) -> String {
+    fn to_sql(&self) -> anyhow::Result<String> {
         self.to_sql_with_concat(" ")
     }
-    fn json_value_sql(&self, json_value: &Json) -> String {
+    fn json_value_sql(&self, json_value: &Json) -> anyhow::Result<String> {
         match json_value {
             Json::String(json_string) => {
-                format!("{}", json_string)
+                Ok(format!("{}", json_string))
             },
             _ => StatementAble::json_value_sql_default(self, json_value)
         }
@@ -46,11 +46,11 @@ mod tests {
         impl ModelAble for User {}
 
         let join = Join::<User>::new(json!("LEFT JOINS orders ON users.id = orders.user_id"));
-        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id");
+        assert_eq!(join.to_sql().unwrap(), "LEFT JOINS orders ON users.id = orders.user_id");
 
         let join = Join::<User>::new(json!(["LEFT JOINS orders ON users.id = orders.user_id"]));
-        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id");
+        assert_eq!(join.to_sql().unwrap(), "LEFT JOINS orders ON users.id = orders.user_id");
         let join = Join::<User>::new(json!(["LEFT JOINS ? ON users.id = ? AND users.age = ?", "orders", "orders.user_id", 18]));
-        assert_eq!(join.to_sql(), "LEFT JOINS orders ON users.id = orders.user_id AND users.age = 18");
+        assert_eq!(join.to_sql().unwrap(), "LEFT JOINS orders ON users.id = orders.user_id AND users.age = 18");
     }
 }

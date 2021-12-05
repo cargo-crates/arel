@@ -269,29 +269,17 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn update_all(&mut self, condition: Json) -> &mut Self {
         self.with_update_manager();
-        if let Some(update_manager) = &mut self.update_manager {
-            update_manager.update(condition);
-        } else {
-            panic!("Not support");
-        }
+        self.update_manager.as_mut().unwrap().update(condition);
         self
     }
     pub fn increment(&mut self, column_name: &str, by: isize) -> &mut Self {
         self.with_update_manager();
-        if let Some(update_manager) = &mut self.update_manager {
-            update_manager.increment(column_name, by);
-        } else {
-            panic!("Not support");
-        }
+        self.update_manager.as_mut().unwrap().increment(column_name, by);
         self
     }
     pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
         self.with_update_manager();
-        if let Some(update_manager) = &mut self.update_manager {
-            update_manager.decrement(column_name, by);
-        } else {
-            panic!("Not support");
-        }
+        self.update_manager.as_mut().unwrap().decrement(column_name, by);
         self
     }
     pub fn with_insert_manager(&mut self) -> &mut Self {
@@ -302,11 +290,7 @@ impl<M> Table<M> where M: ModelAble {
     }
     pub fn create(&mut self, condition: Json) -> &mut Self {
         self.with_insert_manager();
-        if let Some(insert_manager) = &mut self.insert_manager {
-            insert_manager.insert(condition);
-        } else {
-            panic!("Not support");
-        }
+        self.insert_manager.as_mut().unwrap().insert(condition);
         self
     }
     pub fn with_delete_manager(&mut self) -> &mut Self {
@@ -320,30 +304,30 @@ impl<M> Table<M> where M: ModelAble {
         self.r#where(condition);
         self
     }
-    pub fn to_sql(&mut self) -> String {
+    pub fn to_sql(&mut self) -> anyhow::Result<String> {
         let mut collector = SqlString::default();
         if let Some(insert_manager) = &self.insert_manager {
-            visitors::accept_insert_manager(insert_manager, &mut collector);
+            visitors::accept_insert_manager(insert_manager, &mut collector)?;
         } else if let Some(update_manager) = &self.update_manager {
             let mut for_update_select_manager = None;
             if let Some(select_manager) = &mut self.select_manager {
                 select_manager.select(json!([M::primary_key()]));
                 for_update_select_manager = Some(select_manager);
             }
-            visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector);
+            visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector)?;
         } else if let Some(delete_manager) = &self.delete_manager {
             let mut for_update_select_manager = None;
             if let Some(select_manager) = &mut self.select_manager {
                 select_manager.select(json!([M::primary_key()]));
                 for_update_select_manager = Some(select_manager);
             }
-            visitors::accept_delete_manager(delete_manager, for_update_select_manager, &mut collector);
+            visitors::accept_delete_manager(delete_manager, for_update_select_manager, &mut collector)?;
         } else if let Some(select_manager) = &self.select_manager {
-            visitors::accept_select_manager(select_manager, &mut collector);
+            visitors::accept_select_manager(select_manager, &mut collector)?;
         }  else {
-            panic!("Not support");
+            return Err(anyhow::anyhow!("Not support"));
         }
-        collector.value
+        Ok(collector.value)
     }
 }
 

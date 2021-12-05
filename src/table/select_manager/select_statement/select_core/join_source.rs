@@ -20,7 +20,7 @@ impl<M> JoinSource<M> where M: ModelAble {
             _marker: PhantomData,
         }
     }
-    pub fn to_sql(&self) -> String {
+    pub fn to_sql(&self) -> anyhow::Result<String> {
         self.join.to_sql()
     }
 }

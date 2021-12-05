@@ -15,7 +15,7 @@ impl<M> StatementAble<M> for Update<M> where M: ModelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> Vec<SqlLiteral> {
+    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -23,16 +23,16 @@ impl<M> StatementAble<M> for Update<M> where M: ModelAble {
                     for column_name in json_object.keys() {
                         let table_column_name = methods::table_column_name::<M>(column_name);
                         let json_value = json_object.get(column_name).unwrap();
-                        vec.push(SqlLiteral::new(format!("{} = {}", table_column_name, self.json_value_sql(json_value))));
+                        vec.push(SqlLiteral::new(format!("{} = {}", table_column_name, self.json_value_sql(json_value)?)));
                     }
                 },
-                _ => vec.append(&mut StatementAble::to_sql_literals_default(self))
+                _ => vec.append(&mut StatementAble::to_sql_literals_default(self)?)
             }
         }
         // Ok(vec.join(", "))
-        vec
+        Ok(vec)
     }
-    fn to_sql(&self) -> String {
+    fn to_sql(&self) -> anyhow::Result<String> {
         self.to_sql_with_concat(", ")
     }
 }
@@ -62,12 +62,12 @@ mod tests {
             "active": true,
             "profile": null
         }));
-        assert_eq!(update.to_sql(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = null");
+        assert_eq!(update.to_sql().unwrap(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = null");
 
         let update = Update::<User>::new(json!("users.active = 1"));
-        assert_eq!(update.to_sql(), "users.active = 1");
+        assert_eq!(update.to_sql().unwrap(), "users.active = 1");
 
         let update = Update::<User>::new(json!(["users.active = ?", 1]));
-        assert_eq!(update.to_sql(), "users.active = 1");
+        assert_eq!(update.to_sql().unwrap(), "users.active = 1");
     }
 }
