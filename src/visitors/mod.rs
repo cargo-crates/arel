@@ -1,13 +1,13 @@
 pub mod mysql;
 
 use crate::methods::{quote_table_name};
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::collectors::SqlString;
 use crate::table::{SelectManager, update_manager::{UpdateManager, UpdateStatement}, insert_manager::{InsertManager, InsertStatement}, delete_manager::{DeleteManager, DeleteStatement}};
 use crate::table::select_manager::select_statement::{SelectCore, SelectStatement};
 use crate::methods;
 
-pub fn accept_select_manager<'a, M: ModelAble>(select_manager: &'a SelectManager<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
+pub fn accept_select_manager<'a, M: ArelAble>(select_manager: &'a SelectManager<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
     let ast: &SelectStatement<M> = &select_manager.ast;
     let cores: &Vec<SelectCore<M>> = &ast.cores;
     for core in cores {
@@ -29,7 +29,7 @@ pub fn accept_select_manager<'a, M: ModelAble>(select_manager: &'a SelectManager
     Ok(collector)
 }
 
-fn visit_arel_select_core<'a, M: ModelAble>(core: &'a SelectCore<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
+fn visit_arel_select_core<'a, M: ArelAble>(core: &'a SelectCore<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
     collector.push_str(&core.get_select_sql()?.raw_sql);
     collector.push_str(" FROM ");
     collector.push_str(&quote_table_name(&M::table_name()));
@@ -50,7 +50,7 @@ fn visit_arel_select_core<'a, M: ModelAble>(core: &'a SelectCore<M>, collector: 
     Ok(collector)
 }
 
-pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager<M>, for_update_select_manager: Option<&mut SelectManager<M>>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
+pub fn accept_update_manager<'a, M: ArelAble>(update_manager: &'a UpdateManager<M>, for_update_select_manager: Option<&mut SelectManager<M>>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
     let ast: &UpdateStatement<M> = &update_manager.ast;
     if let Some(sql_literal) = ast.get_update_sql()? {
         collector.push_str(&sql_literal.raw_sql);
@@ -77,7 +77,7 @@ pub fn accept_update_manager<'a, M: ModelAble>(update_manager: &'a UpdateManager
     Ok(collector)
 }
 
-pub fn accept_insert_manager<'a, M: ModelAble>(insert_manager: &'a InsertManager<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
+pub fn accept_insert_manager<'a, M: ArelAble>(insert_manager: &'a InsertManager<M>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
     let ast: &InsertStatement<M> = &insert_manager.ast;
     if let Some(sql_literal) = ast.get_insert_sql()? {
         collector.push_str(&sql_literal.raw_sql);
@@ -85,7 +85,7 @@ pub fn accept_insert_manager<'a, M: ModelAble>(insert_manager: &'a InsertManager
     Ok(collector)
 }
 
-pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager<M>, for_delete_select_manager: Option<&mut SelectManager<M>>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
+pub fn accept_delete_manager<'a, M: ArelAble>(delete_manager: &'a DeleteManager<M>, for_delete_select_manager: Option<&mut SelectManager<M>>, collector: &'a mut SqlString) -> anyhow::Result<&'a mut SqlString> {
     let ast: &DeleteStatement<M> = &delete_manager.ast;
     collector.push_str("DELETE FROM ");
     collector.push_str(&quote_table_name(&M::table_name()));
@@ -111,7 +111,7 @@ pub fn accept_delete_manager<'a, M: ModelAble>(delete_manager: &'a DeleteManager
     Ok(collector)
 }
 
-fn accept_subquery_select_manager<M: ModelAble>(subquery_select_manager: Option<&mut SelectManager<M>>) -> anyhow::Result<Option<String>> {
+fn accept_subquery_select_manager<M: ArelAble>(subquery_select_manager: Option<&mut SelectManager<M>>) -> anyhow::Result<Option<String>> {
     if let Some(subquery_select_manager) = subquery_select_manager {
         let mut select_collector = SqlString::default();
         let subquery = format!("SELECT `{}` FROM ({}) AS __arel_subquery_temp", M::primary_key(), accept_select_manager(subquery_select_manager, &mut select_collector)?.value);

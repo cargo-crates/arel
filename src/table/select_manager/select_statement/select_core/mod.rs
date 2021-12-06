@@ -4,12 +4,12 @@ pub use join_source::JoinSource;
 use serde_json::{Value as Json};
 use crate::statements::{StatementAble, select::{Select, Op}, r#where::{self, Where}, Group, having::{self, Having}, helpers::{self, and}};
 use std::default::Default;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use std::marker::PhantomData;
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
-pub struct SelectCore<M: ModelAble> {
+pub struct SelectCore<M: ArelAble> {
     join_source: Option<JoinSource<M>>,
     select: Select<M>,
     // set_quantifier: Option<_>,
@@ -23,7 +23,7 @@ pub struct SelectCore<M: ModelAble> {
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for SelectCore<M> where M: ModelAble {
+impl<M> Default for SelectCore<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             join_source: None,
@@ -38,7 +38,7 @@ impl<M> Default for SelectCore<M> where M: ModelAble {
     }
 }
 
-impl<M> SelectCore<M> where M: ModelAble {
+impl<M> SelectCore<M> where M: ArelAble {
     pub fn select(&mut self, condition: Json) -> &mut Self {
         self.select.value = condition;
         self

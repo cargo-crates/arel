@@ -1,12 +1,12 @@
 use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::{Value as Json};
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::{StatementAble, r#where::{self, Where}, Order, Limit, Offset, helpers::{self, and}};
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
-pub struct DeleteStatement<M: ModelAble> {
+pub struct DeleteStatement<M: ArelAble> {
     pub wheres: Vec<Where<M>>,
     orders: Vec<Order<M>>,
     limit: Option<Limit<M>>,
@@ -14,7 +14,7 @@ pub struct DeleteStatement<M: ModelAble> {
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for DeleteStatement<M> where M: ModelAble {
+impl<M> Default for DeleteStatement<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             wheres: vec![],
@@ -26,7 +26,7 @@ impl<M> Default for DeleteStatement<M> where M: ModelAble {
     }
 }
 
-impl<M> DeleteStatement<M> where M: ModelAble {
+impl<M> DeleteStatement<M> where M: ArelAble {
     pub fn r#where(&mut self, condition: Json, ops: r#where::Ops) -> &mut Self {
         self.wheres.push(Where::<M>::new(condition, ops));
         self

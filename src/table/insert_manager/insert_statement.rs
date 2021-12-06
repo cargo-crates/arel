@@ -2,16 +2,16 @@ use crate::statements::{StatementAble, Insert};
 use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use std::default::Default;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::nodes::{SqlLiteral};
 
 #[derive(Debug, Clone)]
-pub struct InsertStatement<M: ModelAble> {
+pub struct InsertStatement<M: ArelAble> {
     insert: Option<Insert<M>>,
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for InsertStatement<M> where M: ModelAble {
+impl<M> Default for InsertStatement<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             insert: None,
@@ -20,7 +20,7 @@ impl<M> Default for InsertStatement<M> where M: ModelAble {
     }
 }
 
-impl<M> InsertStatement<M> where M: ModelAble {
+impl<M> InsertStatement<M> where M: ArelAble {
     pub fn insert(&mut self, condition: Json) -> &mut Self {
         self.insert = Some(Insert::new(condition));
         self

@@ -1,15 +1,15 @@
 use serde_json::{Value as Json};
 use std::marker::PhantomData;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::StatementAble;
 
 #[derive(Clone, Debug)]
-pub struct Join<M: ModelAble> {
+pub struct Join<M: ArelAble> {
     value: Json,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Join<M> where M: ModelAble {
+impl<M> StatementAble<M> for Join<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -26,7 +26,7 @@ impl<M> StatementAble<M> for Join<M> where M: ModelAble {
     }
 }
 
-impl<M> Join<M> where M: ModelAble {
+impl<M> Join<M> where M: ArelAble {
     pub fn new(value: Json) -> Self {
         Self {
             value,
@@ -43,7 +43,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
 
         let join = Join::<User>::new(json!("LEFT JOINS orders ON users.id = orders.user_id"));
         assert_eq!(join.to_sql().unwrap(), "LEFT JOINS orders ON users.id = orders.user_id");

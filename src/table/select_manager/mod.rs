@@ -4,17 +4,17 @@ pub use select_statement::SelectStatement;
 use serde_json::Value as Json;
 use std::default::Default;
 use std::marker::PhantomData;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use select_statement::SelectCore;
 use crate::statements::{r#where, having};
 
 #[derive(Debug, Clone)]
-pub struct SelectManager<M: ModelAble> {
+pub struct SelectManager<M: ArelAble> {
     pub ast: SelectStatement<M>,
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for SelectManager<M> where M: ModelAble {
+impl<M> Default for SelectManager<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             ast: SelectStatement::default(),
@@ -23,7 +23,7 @@ impl<M> Default for SelectManager<M> where M: ModelAble {
     }
 }
 
-impl<M> SelectManager<M> where M: ModelAble {
+impl<M> SelectManager<M> where M: ArelAble {
     pub fn ctx_mut(&mut self) -> &mut SelectCore<M> {
         self.ast.cores.last_mut().unwrap()
     }

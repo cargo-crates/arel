@@ -1,7 +1,7 @@
 use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
 use crate::methods;
@@ -16,14 +16,14 @@ pub enum Op {
 }
 
 #[derive(Clone, Debug)]
-pub struct Select<M: ModelAble> {
+pub struct Select<M: ArelAble> {
     pub value: Json,
     pub distinct: bool,
     pub op: Option<Op>,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Select<M> where M: ModelAble {
+impl<M> StatementAble<M> for Select<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -80,7 +80,7 @@ impl<M> StatementAble<M> for Select<M> where M: ModelAble {
     }
 }
 
-impl<M> Default for Select<M> where M: ModelAble {
+impl<M> Default for Select<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             value: json!(["*"]),
@@ -91,7 +91,7 @@ impl<M> Default for Select<M> where M: ModelAble {
     }
 }
 
-impl<M> Select<M> where M: ModelAble {
+impl<M> Select<M> where M: ArelAble {
     pub fn new(value: Json, distinct: bool) -> Self {
         Self {
             value,
@@ -110,7 +110,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
 
         let select = Select::<User>::new(json!("name, age"), false);
         assert_eq!(select.to_sql().unwrap(), "name, age");

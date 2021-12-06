@@ -1,8 +1,8 @@
 // use crate::collectors::{SqlString};
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::{StatementAble, helpers};
 
-pub fn to_sql<M: ModelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<String> {
+pub fn to_sql<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<String> {
     helpers::inject_join(children, " AND ")
 }
 
@@ -15,7 +15,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
         let wheres = vec![
             Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
             Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),

@@ -6,17 +6,17 @@ use crate::table::Table;
 /// # Examples
 ///
 /// ```
-/// use arel::traits::ModelAble;
+/// use arel::traits::ArelAble;
 ///
 /// #[derive(Clone, Debug)]
 /// struct User {}
-/// impl ModelAble for User {}
+/// impl ArelAble for User {}
 /// assert_eq!(User::table_name(), "users");
 /// struct Order {}
-/// impl ModelAble for Order {}
+/// impl ArelAble for Order {}
 /// assert_eq!(Order::table_name(), "orders");
 /// ```
-pub trait ModelAble: Sized {
+pub trait ArelAble: Sized {
     fn id() -> &'static str { Self::primary_key() }
     fn primary_key() -> &'static str { "id" }
     fn locking_column() -> &'static str { "lock_version" }

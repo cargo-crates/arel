@@ -2,12 +2,12 @@ use crate::statements::{StatementAble, r#where::{self, Where}, Order, Limit, Off
 use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::nodes::{SqlLiteral};
 use crate::methods;
 
 #[derive(Debug, Clone)]
-pub struct UpdateStatement<M: ModelAble> {
+pub struct UpdateStatement<M: ArelAble> {
     // @relation = nil
     update: Option<Update<M>>,
     pub wheres: Vec<Where<M>>,
@@ -17,7 +17,7 @@ pub struct UpdateStatement<M: ModelAble> {
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for UpdateStatement<M> where M: ModelAble {
+impl<M> Default for UpdateStatement<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             update: None,
@@ -30,7 +30,7 @@ impl<M> Default for UpdateStatement<M> where M: ModelAble {
     }
 }
 
-impl<M> UpdateStatement<M> where M: ModelAble {
+impl<M> UpdateStatement<M> where M: ArelAble {
     pub fn update(&mut self, condition: Json) -> &mut Self {
         self.update = Some(Update::new(condition));
         self

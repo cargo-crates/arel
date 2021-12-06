@@ -4,15 +4,15 @@ pub use insert_statement::InsertStatement;
 use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::{Value as Json};
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 
 #[derive(Debug, Clone)]
-pub struct InsertManager<M: ModelAble> {
+pub struct InsertManager<M: ArelAble> {
     pub ast: InsertStatement<M>,
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for InsertManager<M> where M: ModelAble {
+impl<M> Default for InsertManager<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             ast: InsertStatement::default(),
@@ -21,7 +21,7 @@ impl<M> Default for InsertManager<M> where M: ModelAble {
     }
 }
 
-impl<M> InsertManager<M> where M: ModelAble {
+impl<M> InsertManager<M> where M: ArelAble {
     pub fn ctx_mut(&mut self) -> &mut InsertStatement<M> {
         &mut self.ast
     }

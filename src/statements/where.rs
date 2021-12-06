@@ -3,7 +3,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::methods;
 
 #[derive(Clone, Debug)]
@@ -28,13 +28,13 @@ impl Ops {
 
 
 #[derive(Clone, Debug)]
-pub struct Where<M: ModelAble> {
+pub struct Where<M: ArelAble> {
     value: Json,
     ops: Ops,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Where<M> where M: ModelAble {
+impl<M> StatementAble<M> for Where<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -87,7 +87,7 @@ impl<M> StatementAble<M> for Where<M> where M: ModelAble {
     }
 }
 
-impl<M> Where<M> where M: ModelAble {
+impl<M> Where<M> where M: ArelAble {
     pub fn new(value: Json, ops: Ops) -> Self {
         Self {
             value,
@@ -189,7 +189,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
         let r#where = Where::<User>::new(json!({
             "name": "Tom",
             "age": 18,

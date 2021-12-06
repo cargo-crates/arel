@@ -4,16 +4,16 @@ pub use delete_statement::DeleteStatement;
 use serde_json::Value as Json;
 use std::default::Default;
 use std::marker::PhantomData;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::{r#where};
 
 #[derive(Debug, Clone)]
-pub struct DeleteManager<M: ModelAble> {
+pub struct DeleteManager<M: ArelAble> {
     pub ast: DeleteStatement<M>,
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for DeleteManager<M> where M: ModelAble {
+impl<M> Default for DeleteManager<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             ast: DeleteStatement::default(),
@@ -22,7 +22,7 @@ impl<M> Default for DeleteManager<M> where M: ModelAble {
     }
 }
 
-impl<M> DeleteManager<M> where M: ModelAble {
+impl<M> DeleteManager<M> where M: ArelAble {
     pub fn ctx_mut(&mut self) -> &mut DeleteStatement<M> {
         &mut self.ast
     }

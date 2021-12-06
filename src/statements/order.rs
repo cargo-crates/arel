@@ -1,17 +1,17 @@
 use serde_json::{Value as Json};
 use std::marker::PhantomData;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
 use crate::methods;
 
 #[derive(Clone, Debug)]
-pub struct Order<M: ModelAble> {
+pub struct Order<M: ArelAble> {
     value: Json,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Order<M> where M: ModelAble {
+impl<M> StatementAble<M> for Order<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -54,7 +54,7 @@ impl<M> StatementAble<M> for Order<M> where M: ModelAble {
     }
 }
 
-impl<M> Order<M> where M: ModelAble {
+impl<M> Order<M> where M: ArelAble {
     pub fn new(value: Json) -> Self {
         Self {
             value,
@@ -71,7 +71,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
 
         let order = Order::<User>::new(json!("name desc"));
         assert_eq!(order.to_sql().unwrap(), "name desc");

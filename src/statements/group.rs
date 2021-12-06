@@ -1,18 +1,18 @@
 use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::StatementAble;
 use crate::nodes::SqlLiteral;
 use crate::methods;
 
 #[derive(Clone, Debug)]
-pub struct Group<M: ModelAble> {
+pub struct Group<M: ArelAble> {
     pub value: Json,
     _marker: PhantomData<M>,
 }
 
-impl<M> StatementAble<M> for Group<M> where M: ModelAble {
+impl<M> StatementAble<M> for Group<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
@@ -42,7 +42,7 @@ impl<M> StatementAble<M> for Group<M> where M: ModelAble {
     }
 }
 
-impl<M> Default for Group<M> where M: ModelAble {
+impl<M> Default for Group<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             value: json!(["*"]),
@@ -51,7 +51,7 @@ impl<M> Default for Group<M> where M: ModelAble {
     }
 }
 
-impl<M> Group<M> where M: ModelAble {
+impl<M> Group<M> where M: ArelAble {
     pub fn new(value: Json) -> Self {
         Self {
             value,
@@ -68,7 +68,7 @@ mod tests {
     fn to_sql() {
         #[derive(Clone, Debug)]
         struct User {}
-        impl ModelAble for User {}
+        impl ArelAble for User {}
 
         let group = Group::<User>::new(json!("name, age"));
         assert_eq!(group.to_sql().unwrap(), "name, age");

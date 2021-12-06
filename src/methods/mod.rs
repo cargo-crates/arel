@@ -1,7 +1,7 @@
 use std::any::type_name;
 use inflector::{string::{demodulize, pluralize}, cases::snakecase};
 use regex::Regex;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 
 pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
     // eg: arel::UserTable
@@ -19,17 +19,17 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
 /// # Examples
 ///
 /// ```
-/// use arel::traits::ModelAble;
+/// use arel::traits::ArelAble;
 /// use arel::methods::table_column_name;
 ///
 /// #[derive(Clone, Debug)]
 /// struct User {}
-/// impl ModelAble for User {}
+/// impl ArelAble for User {}
 /// assert_eq!(table_column_name::<User>("*"), "`users`.*");
 /// assert_eq!(table_column_name::<User>("age"), "`users`.`age`");
 /// assert_eq!(table_column_name::<User>("users.name"), "users.name");
 /// ```
-pub fn table_column_name<M: ModelAble>(column_name: &str) -> String {
+pub fn table_column_name<M: ArelAble>(column_name: &str) -> String {
     if column_name == "*" {
         format!("`{}`.{}", M::table_name(), column_name)
     } else if Regex::new(r"\.").unwrap().is_match(column_name) {

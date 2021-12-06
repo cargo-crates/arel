@@ -25,9 +25,9 @@ pub use update::Update;
 
 use serde_json::{Value as Json};
 use crate::nodes::SqlLiteral;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 
-pub trait StatementAble<M: ModelAble> {
+pub trait StatementAble<M: ArelAble> {
     fn json_value(&self) -> Option<&Json>;
     fn to_sql_literals_default(&self) -> anyhow::Result<Vec<SqlLiteral>> {
         let mut vec = vec![];

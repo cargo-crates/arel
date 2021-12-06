@@ -10,16 +10,16 @@ pub use delete_manager::DeleteManager;
 
 use serde_json::{Value as Json, json};
 use crate::methods::type_to_pluralize_string;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use std::marker::PhantomData;
 use crate::collectors::SqlString;
 use crate::visitors;
 use crate::statements::{r#where, having};
 use crate::methods;
-// pub trait ManagerStatement<M: ModelAble> {}
+// pub trait ManagerStatement<M: ArelAble> {}
 
 #[derive(Clone, Debug)]
-pub struct Table<M: ModelAble> {
+pub struct Table<M: ArelAble> {
     pub select_manager: Option<SelectManager<M>>,
     pub insert_manager: Option<InsertManager<M>>,
     pub update_manager: Option<UpdateManager<M>>,
@@ -27,18 +27,18 @@ pub struct Table<M: ModelAble> {
     _marker: PhantomData<M>,
 }
 
-impl<M> Table<M> where M: ModelAble {
+impl<M> Table<M> where M: ArelAble {
     /// Get Model's table name.
     ///
     /// # Examples
     ///
     /// ```
-    /// use arel::traits::ModelAble;
+    /// use arel::traits::ArelAble;
     /// use arel::table::Table;
     ///
     /// #[derive(Clone, Debug)]
     /// struct User {}
-    /// impl ModelAble for User {}
+    /// impl ArelAble for User {}
     /// assert_eq!(User::table_name(), "users");
     /// ```
     pub fn table_name() -> String {
@@ -344,7 +344,7 @@ impl<M> Table<M> where M: ModelAble {
 //     fn it_works() {
 //         #[derive(Clone, Debug)]
 //         struct User {}
-//         impl ModelAble for User {}
+//         impl ArelAble for User {}
 //         impl User {
 //             fn new() -> Self {
 //                 Self {}

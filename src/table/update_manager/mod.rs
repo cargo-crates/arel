@@ -4,16 +4,16 @@ pub use update_statement::UpdateStatement;
 use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::{Value as Json};
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::{r#where::{self}};
 
 #[derive(Debug, Clone)]
-pub struct UpdateManager<M: ModelAble> {
+pub struct UpdateManager<M: ArelAble> {
     pub ast: UpdateStatement<M>,
     _marker: PhantomData<M>,
 }
 
-impl<M> Default for UpdateManager<M> where M: ModelAble {
+impl<M> Default for UpdateManager<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             ast: UpdateStatement::default(),
@@ -22,7 +22,7 @@ impl<M> Default for UpdateManager<M> where M: ModelAble {
     }
 }
 
-impl<M> UpdateManager<M> where M: ModelAble {
+impl<M> UpdateManager<M> where M: ArelAble {
     pub fn ctx_mut(&mut self) -> &mut UpdateStatement<M> {
         &mut self.ast
     }

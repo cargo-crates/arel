@@ -4,12 +4,12 @@ pub use select_core::SelectCore;
 use std::default::Default;
 use std::marker::PhantomData;
 use serde_json::Value as Json;
-use crate::traits::ModelAble;
+use crate::traits::ArelAble;
 use crate::statements::{StatementAble, Order, Limit, Offset, Lock, helpers};
 use crate::nodes::{SqlLiteral};
 
 #[derive(Clone, Debug)]
-pub struct SelectStatement<M: ModelAble> {
+pub struct SelectStatement<M: ArelAble> {
     pub cores: Vec<SelectCore<M>>,
     orders: Vec<Order<M>>,
     limit: Option<Limit<M>>,
@@ -19,9 +19,9 @@ pub struct SelectStatement<M: ModelAble> {
     _marker: PhantomData<M>,
 }
 
-// impl<M> ManagerStatement<M> for SelectStatement<M> where M: ModelAble {}
+// impl<M> ManagerStatement<M> for SelectStatement<M> where M: ArelAble {}
 
-impl<M> Default for SelectStatement<M> where M: ModelAble {
+impl<M> Default for SelectStatement<M> where M: ArelAble {
     fn default() -> Self {
         Self {
             cores: vec![SelectCore::<M>::default()],
@@ -35,7 +35,7 @@ impl<M> Default for SelectStatement<M> where M: ModelAble {
     }
 }
 
-impl<M> SelectStatement<M> where M: ModelAble {
+impl<M> SelectStatement<M> where M: ArelAble {
     pub fn lock(&mut self, condition: Json) -> &mut Self {
         self.lock = Some(Lock::<M>::new(condition));
         self

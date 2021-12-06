@@ -4,12 +4,12 @@
 [crates.io]: https://crates.io/crates/arel
 
 ```rust
-use arel::traits::ModelAble;
+use arel::ArelAble;
 use serde_json::json;
 
 #[derive(Clone, Debug)]
 struct User {}
-impl ModelAble for User {}
+impl ArelAble for User {}
 
 let sql = User::query()
     .where(json!({"name": "Tom"}))
