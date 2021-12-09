@@ -1,4 +1,6 @@
-# Arel &emsp; [![Latest Version]][crates.io]
+# Arel &emsp; 
+[![ci](https://github.com/cargo-crates/arel/workflows/Rust/badge.svg)](https://github.com/cargo-crates/arel/actions)
+[![Latest Version]][crates.io]
 
 [Latest Version]: https://img.shields.io/crates/v/arel.svg
 [crates.io]: https://crates.io/crates/arel
