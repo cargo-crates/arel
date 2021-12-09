@@ -86,7 +86,7 @@ pub trait StatementAble<M: ArelAble> {
                 let value = if *json_bool {1} else {0};
                 Ok(format!("{}", value))
             },
-            Json::Null => { Ok(format!("{}", "null")) },
+            Json::Null => { Ok(format!("{}", "NULL")) },
             _ => Err(anyhow::anyhow!("Error: Not Support"))
         }
     }

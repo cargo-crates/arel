@@ -62,7 +62,7 @@ mod tests {
             "active": true,
             "profile": null
         }));
-        assert_eq!(update.to_sql().unwrap(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = null");
+        assert_eq!(update.to_sql().unwrap(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = NULL");
 
         let update = Update::<User>::new(json!("users.active = 1"));
         assert_eq!(update.to_sql().unwrap(), "users.active = 1");
