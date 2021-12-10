@@ -11,7 +11,7 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
     // eg: user_table
     let snake_struct_name = snakecase::to_snake_case(&struct_name);
     // eg: user_tables
-    pluralize::to_plural(&snake_struct_name)
+    pluralize::to_plural(Regex::new(r"_arel$").unwrap().replace(&snake_struct_name, "").as_ref())
 }
 
 /// Get Model's table field name.
@@ -22,9 +22,8 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
 /// use arel::traits::ArelAble;
 /// use arel::methods::table_column_name;
 ///
-/// #[derive(Clone, Debug)]
+/// #[arel::arel]
 /// struct User {}
-/// impl ArelAble for User {}
 /// assert_eq!(table_column_name::<User>("*"), "`users`.*");
 /// assert_eq!(table_column_name::<User>("age"), "`users`.`age`");
 /// assert_eq!(table_column_name::<User>("users.name"), "users.name");

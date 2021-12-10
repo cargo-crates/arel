@@ -37,13 +37,14 @@ impl<M> Join<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let join = Join::<User>::new(json!("LEFT JOINS orders ON users.id = orders.user_id"));
         assert_eq!(join.to_sql().unwrap(), "LEFT JOINS orders ON users.id = orders.user_id");

@@ -27,13 +27,14 @@ impl<M> Offset<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     // use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let offset = Offset::<User>::new(10);
         assert_eq!(offset.to_sql().unwrap(), "OFFSET 10");

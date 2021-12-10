@@ -62,13 +62,14 @@ impl<M> Group<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let group = Group::<User>::new(json!("name, age"));
         assert_eq!(group.to_sql().unwrap(), "name, age");

@@ -104,13 +104,14 @@ impl<M> Select<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let select = Select::<User>::new(json!("name, age"), false);
         assert_eq!(select.to_sql().unwrap(), "name, age");

@@ -1,17 +1,19 @@
 # Arel &emsp; 
 [![ci](https://github.com/cargo-crates/arel/workflows/Rust/badge.svg)](https://github.com/cargo-crates/arel/actions)
 [![Latest Version]][crates.io]
+![downloads](https://img.shields.io/crates/d/arel.svg?style=flat-square)
 
 [Latest Version]: https://img.shields.io/crates/v/arel.svg
 [crates.io]: https://crates.io/crates/arel
 
 ```rust
-use arel::ArelAble;
+use arel::{arel, ArelAble};
 use serde_json::json;
 
-#[derive(Clone, Debug)]
-struct User {}
-impl ArelAble for User {}
+#[arel(table_name="users", primary_key="id")]
+struct User {
+    id: usize,
+}
 
 let sql = User::query()
     .where(json!({"name": "Tom"}))

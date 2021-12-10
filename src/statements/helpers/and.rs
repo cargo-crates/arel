@@ -8,14 +8,15 @@ pub fn to_sql<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Re
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate as arel;
     use serde_json::{json};
     use crate::statements::{r#where::{self, Where}};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
+
         let wheres = vec![
             Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
             Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),

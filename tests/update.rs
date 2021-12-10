@@ -1,10 +1,8 @@
-use arel::ArelAble;
+use arel::{ArelAble};
 use serde_json::json;
 
-#[derive(Clone, Debug)]
+#[arel::arel]
 struct User {}
-
-impl ArelAble for User {}
 
 #[cfg(test)]
 mod update {

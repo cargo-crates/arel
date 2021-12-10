@@ -12,3 +12,7 @@ pub fn sql(sql_raw: &str) -> SqlLiteral {
     SqlLiteral::new(sql_raw.to_string())
 }
 pub use traits::ArelAble;
+
+pub use arel_macro::arel;
+// derive 废弃
+// pub use arel_macro::Arel;

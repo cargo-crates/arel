@@ -8,12 +8,11 @@ use crate::table::Table;
 /// ```
 /// use arel::traits::ArelAble;
 ///
-/// #[derive(Clone, Debug)]
+/// #[arel::arel]
 /// struct User {}
-/// impl ArelAble for User {}
 /// assert_eq!(User::table_name(), "users");
+/// #[arel::arel]
 /// struct Order {}
-/// impl ArelAble for Order {}
 /// assert_eq!(Order::table_name(), "orders");
 /// ```
 pub trait ArelAble: Sized {

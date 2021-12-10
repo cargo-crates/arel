@@ -1,0 +1,19 @@
+[package]
+name = "arel_macro"
+version = "0.0.0"
+edition = "2021"
+description = "arel macros"
+authors = ["sanmu <hdy9515@dingtalk.com>"]
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["extra-traits", "full"]}
+proc-macro2 = "1.0"
+quote = "1.0"
+
+#expansion = { path = "../../expansion" }
+expansion = "0.0.2"

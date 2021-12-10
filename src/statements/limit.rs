@@ -28,13 +28,14 @@ impl<M> Limit<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     // use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let limit = Limit::<User>::new(10);
         assert_eq!(limit.to_sql().unwrap(), "LIMIT 10");

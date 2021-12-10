@@ -11,12 +11,12 @@ impl SqlLiteral {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn it_works() {
-        let sql_literal = SqlLiteral::new("length(title)".to_string());
-        assert_eq!(sql_literal.raw_sql, "length(title)".to_string());
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     #[test]
+//     fn it_works() {
+//         let sql_literal = SqlLiteral::new("length(title)".to_string());
+//         assert_eq!(sql_literal.raw_sql, "length(title)".to_string());
+//     }
+// }

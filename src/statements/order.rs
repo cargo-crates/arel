@@ -65,13 +65,14 @@ impl<M> Order<M> where M: ArelAble {
 
 #[cfg(test)]
 mod tests {
+    use crate as arel;
     use super::*;
     use serde_json::{json};
     #[test]
     fn to_sql() {
-        #[derive(Clone, Debug)]
+        #[arel::arel]
+        #[allow(dead_code)]
         struct User {}
-        impl ArelAble for User {}
 
         let order = Order::<User>::new(json!("name desc"));
         assert_eq!(order.to_sql().unwrap(), "name desc");

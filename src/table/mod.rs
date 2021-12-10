@@ -36,9 +36,8 @@ impl<M> Table<M> where M: ArelAble {
     /// use arel::traits::ArelAble;
     /// use arel::table::Table;
     ///
-    /// #[derive(Clone, Debug)]
+    /// #[arel::arel]
     /// struct User {}
-    /// impl ArelAble for User {}
     /// assert_eq!(User::table_name(), "users");
     /// ```
     pub fn table_name() -> String {
