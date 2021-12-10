@@ -313,23 +313,23 @@ impl<M> Table<M> where M: ArelAble {
     pub fn to_sql(&mut self) -> anyhow::Result<String> {
         let mut collector = SqlString::default();
         if let Some(insert_manager) = &self.insert_manager {
-            visitors::accept_insert_manager(insert_manager, &mut collector)?;
+            visitors::to_sql::accept_insert_manager(insert_manager, &mut collector)?;
         } else if let Some(update_manager) = &self.update_manager {
             let mut for_update_select_manager = None;
             if let Some(select_manager) = &mut self.select_manager {
                 select_manager.select(json!([M::primary_key()]));
                 for_update_select_manager = Some(select_manager);
             }
-            visitors::accept_update_manager(update_manager, for_update_select_manager, &mut collector)?;
+            visitors::to_sql::accept_update_manager(update_manager, for_update_select_manager, &mut collector)?;
         } else if let Some(delete_manager) = &self.delete_manager {
             let mut for_update_select_manager = None;
             if let Some(select_manager) = &mut self.select_manager {
                 select_manager.select(json!([M::primary_key()]));
                 for_update_select_manager = Some(select_manager);
             }
-            visitors::accept_delete_manager(delete_manager, for_update_select_manager, &mut collector)?;
+            visitors::to_sql::accept_delete_manager(delete_manager, for_update_select_manager, &mut collector)?;
         } else if let Some(select_manager) = &self.select_manager {
-            visitors::accept_select_manager(select_manager, &mut collector)?;
+            visitors::to_sql::accept_select_manager(select_manager, &mut collector)?;
         }  else {
             return Err(anyhow::anyhow!("Not support"));
         }
