@@ -1,4 +1,4 @@
-mod arel;
+pub(crate) mod arel;
 
 use proc_macro::TokenStream;
 

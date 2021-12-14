@@ -6,26 +6,64 @@
 [Latest Version]: https://img.shields.io/crates/v/arel.svg
 [crates.io]: https://crates.io/crates/arel
 
+* Install
+```Cargo.toml
+# features: sqlite|mysql|postgres|mssql
+arel = { version = "*", features = ["sqlite"]}
+```
+
+* Demo
 ```rust
-use arel::{arel, ArelAble};
-use serde_json::json;
+use arel::prelude::*;
 
 #[arel(table_name="users", primary_key="id")]
 struct User {
-    id: usize,
+    id: i64,
+    name: String,
 }
 
-let sql = User::query()
-    .where(json!({"name": "Tom"}))
-    .where(json!(["active = ?", true]))
-    .where_not(json!({"status": [1, 2, 3]}))
-    .where_between(json!({"created_at": ["2021-12-01 00:00:00", "2021-12-31 23:59:59"]}))
-    .where_or(json!({"login": false, "phone": null}))
-    .where_range("age", ..18)
-    .distinct()
-    .to_sql()
-    .unwrap();
-assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1 AND `users`.`status` NOT IN (1, 2, 3) AND `users`.`created_at` BETWEEN '2021-12-01 00:00:00' AND '2021-12-31 23:59:59' AND (`users`.`login` = 0 OR `users`.`phone` IS NULL) AND `users`.`age` < 18");
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let db_state = arel::visitors::get_or_init_db_state(|| sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:")).await?;
+
+    let sql = User::query()
+        .r#where(json!({"name": "Tom"}))
+        .r#where(json!(["active = ?", true]))
+        .where_not(json!({"status": [1, 2, 3]}))
+        .where_between(json!({"created_at": ["2021-12-01 00:00:00", "2021-12-31 23:59:59"]}))
+        .where_or(json!({"login": false, "phone": null}))
+        .where_range("age", ..18)
+        .distinct()
+        .to_sql()
+        .unwrap();
+    assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1 AND `users`.`status` NOT IN (1, 2, 3) AND `users`.`created_at` BETWEEN '2021-12-01 00:00:00' AND '2021-12-31 23:59:59' AND (`users`.`login` = 0 OR `users`.`phone` IS NULL) AND `users`.`age` < 18");
+
+    // query batch vec<User>
+    let users = User::query().fetch_all().await?;
+    println!("users: {:#?}", users);
+    // update batch
+    User::update_all(json!({"name": "update_1"})).execute().await?;
+    // delete batch
+    User::delete_all(json!(["id > ?", 5])).execute().await?;
+    
+    // query one User
+    let user = User::query().fetch_one().await?;
+    println!("user: {:#?}", user);
+    // create one
+    let mut user = User::new();
+    user.set_name("lily".to_string()).save().await?;
+    println!("user: {:#?}", user);
+    // update one
+    let mut user = User::query().fetch_one().await?;
+    user.set_name("Tom".to_string()).save().await?;
+    println!("user: {:#?}", user);
+    // delete one
+    let mut user = User::query().fetch_one().await?;
+    let result = user.delete().await?;
+    println!("{:?}", result);
+
+    Ok(())
+}
 ```
 
 ---

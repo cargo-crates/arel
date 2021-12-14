@@ -2,7 +2,4 @@
 .vscode
 /target
 Cargo.lock
-src/main.rs
-
-# arel_macro
-/arel_macro/target
+arel/src/main.rs
