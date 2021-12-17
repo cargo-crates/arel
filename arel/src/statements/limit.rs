@@ -2,6 +2,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
+use crate::collectors::Sql;
 
 #[derive(Clone, Debug)]
 pub struct Limit<M: ArelAble> {
@@ -11,8 +12,10 @@ pub struct Limit<M: ArelAble> {
 
 impl<M> StatementAble<M> for Limit<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> { None }
-    fn to_sql(&self) -> anyhow::Result<String> {
-        Ok(format!("LIMIT {}", self.value))
+    fn to_sql(&self) -> anyhow::Result<Sql> {
+        let mut sql = Sql::default();
+        sql.push_str(&format!("LIMIT {}", self.value));
+        Ok(sql)
     }
 }
 
@@ -40,6 +43,6 @@ mod tests {
         }
 
         let limit = Limit::<User>::new(10);
-        assert_eq!(limit.to_sql().unwrap(), "LIMIT 10");
+        assert_eq!(limit.to_sql_string().unwrap(), "LIMIT 10");
     }
 }

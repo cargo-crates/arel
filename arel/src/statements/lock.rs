@@ -2,6 +2,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
+use crate::collectors::Sql;
 
 #[derive(Clone, Debug)]
 pub struct Lock<M: ArelAble> {
@@ -13,15 +14,15 @@ impl<M> StatementAble<M> for Lock<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         self.to_sql_with_concat(" ")
     }
-    fn json_value_sql(&self, json_value: &Json) -> anyhow::Result<String> {
+    fn value_sql_string_from_json(&self, json_value: &Json) -> anyhow::Result<String> {
         match json_value {
             Json::String(json_string) => {
                 Ok(format!("{}", json_string))
             },
-            _ => StatementAble::json_value_sql_default(self, json_value)
+            _ => StatementAble::default_value_sql_string_from_json(self, json_value)
         }
     }
 }
@@ -49,11 +50,6 @@ mod tests {
         }
 
         let lock = Lock::<User>::new(json!("FOR UPDATE"));
-        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
-
-        let lock = Lock::<User>::new(json!(["FOR UPDATE"]));
-        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
-        let lock = Lock::<User>::new(json!(["FOR ?", "UPDATE"]));
-        assert_eq!(lock.to_sql().unwrap(), "FOR UPDATE");
+        assert_eq!(lock.to_sql_string().unwrap(), "FOR UPDATE");
     }
 }

@@ -1,2 +1,2 @@
-pub mod sql_string;
-pub use sql_string::SqlString;
+pub mod sql;
+pub use sql::Sql;

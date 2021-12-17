@@ -115,12 +115,12 @@ pub fn generate_struct_functions_define(derive_input_helper: &DeriveInputHelper)
             let ident = &f.ident;
             quote::quote! {
                     if self.#ident.is_none() {
-                        return Err(anyhow::anyhow!("{} Not Allow None", stringify!(#ident)));
+                        return Err(arel::anyhow::anyhow!("{} Not Allow None", stringify!(#ident)));
                     }
                 }
         }).collect();
         let validations_token_stream = quote::quote! {
-            pub fn validate(&self) -> anyhow::Result<()> {
+            pub fn validate(&self) -> arel::anyhow::Result<()> {
                 #(#segments)*
                 Ok(())
             }
@@ -196,12 +196,12 @@ pub fn generate_struct_impl_arel_functions_define(derive_input_helper: &DeriveIn
     // attr_json
     {
         final_token_stream.extend(quote::quote! {
-            fn attr_json(&self, attr: &str) -> std::option::Option<serde_json::Value> {
+            fn attr_json(&self, attr: &str) -> std::option::Option<arel::serde_json::Value> {
                 match attr {
                     #(
                         stringify!(#idents) => {
                             if let std::option::Option::Some(value) = self.#idents() {
-                                return std::option::Option::Some(serde_json::json!(value));
+                                return std::option::Option::Some(arel::serde_json::json!(value));
                             }
                         },
                     )*
@@ -214,13 +214,13 @@ pub fn generate_struct_impl_arel_functions_define(derive_input_helper: &DeriveIn
     // persisted_attr_json
     {
         final_token_stream.extend(quote::quote! {
-            fn persisted_attr_json(&self, attr: &str) -> std::option::Option<serde_json::Value> {
+            fn persisted_attr_json(&self, attr: &str) -> std::option::Option<arel::serde_json::Value> {
                 if let Some(persisted_row_record) = self.persisted_row_record() {
                     match attr {
                         #(
                             stringify!(#idents) => {
                                 if let std::option::Option::Some(value) = &persisted_row_record.#idents {
-                                    return std::option::Option::Some(serde_json::json!(value));
+                                    return std::option::Option::Some(arel::serde_json::json!(value));
                                 }
                             },
                         )*

@@ -15,4 +15,8 @@ pub use traits::ArelAble;
 
 pub use arel_macro::arel;
 
+pub use async_trait;
+pub use serde_json;
+pub use anyhow;
+pub use sqlx;
 pub mod prelude;

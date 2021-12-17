@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::default::Default;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
-use crate::nodes::SqlLiteral;
+use crate::collectors::Sql;
 use crate::methods;
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ impl<M> StatementAble<M> for Select<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
+    fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -35,44 +35,52 @@ impl<M> StatementAble<M> for Select<M> where M: ArelAble {
                     for column_name in json_array.iter() {
                         if let Json::String(column_name) = column_name {
                             let table_column_name = methods::table_column_name::<M>(column_name);
-                            vec.push(SqlLiteral::new(format!("{}", table_column_name)));
+                            vec.push(Sql::new(format!("{}", table_column_name)));
                         } else {
                             return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                         }
                     }
                 },
-                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)?),
+                Json::String(_) =>  vec.append(&mut StatementAble::default_to_sub_sqls(self)?),
                 _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }
         // Ok(vec.join(" AND "))
         Ok(vec)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         let mut sql = self.to_sql_with_concat(", ")?;
         if self.distinct {
-            sql = format!("DISTINCT {}", &sql);
+            sql.value = format!("DISTINCT {}", &sql.value);
         }
         if let Some(op) = &self.op {
             match op {
                 Op::Count => {
-                    sql = format!("COUNT({})", &sql);
+                    sql.value = format!("COUNT({})", &sql.value);
                 },
                 Op::Sum(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("SUM({})", &select.to_sql()?);
+                    let mut sub_sql = select.to_sql()?;
+                    sub_sql.value = format!("SUM({})", &sub_sql.value);
+                    sql = sub_sql;
                 },
                 Op::Avg(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("AVG({})", &select.to_sql()?);
+                    let mut sub_sql = select.to_sql()?;
+                    sub_sql.value = format!("AVG({})", &sub_sql.value);
+                    sql = sub_sql;
                 },
                 Op::Min(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("MIN({})", &select.to_sql()?);
+                    let mut sub_sql = select.to_sql()?;
+                    sub_sql.value = format!("MIN({})", &sub_sql.value);
+                    sql = sub_sql;
                 },
                 Op::Max(column_name) => {
                     let select = Select::<M>::new(json!([column_name]), self.distinct);
-                    sql = format!("MAX({})", &select.to_sql()?);
+                    let mut sub_sql = select.to_sql()?;
+                    sub_sql.value = format!("MAX({})", &sub_sql.value);
+                    sql = sub_sql;
                 }
             }
         }
@@ -116,9 +124,9 @@ mod tests {
         }
 
         let select = Select::<User>::new(json!("name, age"), false);
-        assert_eq!(select.to_sql().unwrap(), "name, age");
+        assert_eq!(select.to_sql_string().unwrap(), "name, age");
 
         let select = Select::<User>::new(json!(["name", "age"]), false);
-        assert_eq!(select.to_sql().unwrap(), "`users`.`name`, `users`.`age`");
+        assert_eq!(select.to_sql_string().unwrap(), "`users`.`name`, `users`.`age`");
     }
 }

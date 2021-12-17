@@ -2,7 +2,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
-use crate::nodes::SqlLiteral;
+use crate::collectors::Sql;
 use crate::methods;
 
 #[derive(Clone, Debug)]
@@ -15,7 +15,7 @@ impl<M> StatementAble<M> for Insert<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
+    fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -25,9 +25,9 @@ impl<M> StatementAble<M> for Insert<M> where M: ArelAble {
                     for column_name in json_object.keys() {
                         keys.push(format!("`{}`", column_name));
                         let json_value = json_object.get(column_name).unwrap();
-                        values.push(self.json_value_sql(json_value)?);
+                        values.push(self.value_sql_string_from_json(json_value)?);
                     }
-                    vec.push(SqlLiteral::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
+                    vec.push(Sql::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
                 },
                 _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
@@ -35,7 +35,7 @@ impl<M> StatementAble<M> for Insert<M> where M: ArelAble {
         // Ok(vec.join(", "))
         Ok(vec)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         self.to_sql_with_concat("")
     }
 }

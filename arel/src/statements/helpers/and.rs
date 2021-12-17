@@ -1,9 +1,14 @@
-// use crate::collectors::{SqlString};
+// use crate::collectors::{Sql};
 use crate::traits::ArelAble;
 use crate::statements::{StatementAble, helpers};
+use crate::collectors::Sql;
 
-pub fn to_sql<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<String> {
+pub fn to_sql<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<Sql> {
     helpers::inject_join(children, " AND ")
+}
+
+pub fn to_sql_string<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> anyhow::Result<String> {
+    to_sql(children)?.to_sql_string()
 }
 
 #[cfg(test)]
@@ -23,6 +28,6 @@ mod tests {
             Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
             Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),
         ];
-        assert_eq!(super::to_sql(&wheres).unwrap(), "`users`.`profile` IS NULL AND name = 'Tom'");
+        assert_eq!(super::to_sql_string(&wheres).unwrap(), "`users`.`profile` IS NULL AND name = 'Tom'");
     }
 }

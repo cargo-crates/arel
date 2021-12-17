@@ -3,7 +3,7 @@ use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
 use std::default::Default;
 use crate::traits::ArelAble;
-use crate::nodes::{SqlLiteral};
+use crate::collectors::{Sql};
 use crate::methods;
 
 #[derive(Debug, Clone)]
@@ -49,13 +49,11 @@ impl<M> UpdateStatement<M> where M: ArelAble {
     pub fn decrement(&mut self, column_name: &str, by: isize) -> &mut Self {
         self.increment(column_name, -by)
     }
-    pub fn get_update_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_update_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(update) = &self.update {
-            let mut sql = "UPDATE ".to_string();
-            sql.push_str(&methods::quote_table_name(&M::table_name()));
-            sql.push_str(" SET ");
-            sql.push_str(&update.to_sql()?);
-            Ok(Some(SqlLiteral::new(sql)))
+            let mut sql = update.to_sql()?;
+            sql.value = format!("UPDATE {} SET {}", &methods::quote_table_name(&M::table_name()), &sql.value);
+            Ok(Some(sql))
         } else {
             Ok(None)
         }
@@ -64,31 +62,31 @@ impl<M> UpdateStatement<M> where M: ArelAble {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
-    pub fn get_where_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_where_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.r#wheres.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(format!("{}", and::to_sql(&self.r#wheres)?))))
+            Ok(Some(and::to_sql(&self.r#wheres)?))
         }
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
         self.orders.push(Order::new(condition));
         self
     }
-    pub fn get_order_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_order_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.orders.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")?)))
+            Ok(Some(helpers::inject_join(&self.orders, ", ")?))
         }
     }
     pub fn limit(&mut self, condition: usize) -> &mut Self {
         self.limit = Some(Limit::new(condition));
         self
     }
-    pub fn get_limit_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_limit_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(limit) = &self.limit {
-            Ok(Some(SqlLiteral::new(limit.to_sql()?)))
+            Ok(Some(limit.to_sql()?))
         } else {
             Ok(None)
         }
@@ -97,9 +95,9 @@ impl<M> UpdateStatement<M> where M: ArelAble {
         self.offset = Some(Offset::new(condition));
         self
     }
-    pub fn get_offset_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_offset_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(offset) = &self.offset {
-            Ok(Some(SqlLiteral::new(offset.to_sql()?)))
+            Ok(Some(offset.to_sql()?))
         } else {
             Ok(None)
         }

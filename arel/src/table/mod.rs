@@ -12,7 +12,7 @@ use serde_json::{Value as Json, json};
 use crate::methods::type_to_pluralize_string;
 use crate::traits::ArelAble;
 use std::marker::PhantomData;
-use crate::collectors::SqlString;
+use crate::collectors::{Sql};
 use crate::visitors;
 use crate::statements::{r#where, having};
 use crate::methods;
@@ -311,8 +311,8 @@ impl<M> Table<M> where M: ArelAble {
         self.r#where(condition);
         self
     }
-    pub fn to_sql(&mut self) -> anyhow::Result<String> {
-        let mut collector = SqlString::default();
+    pub fn to_sql(&mut self) -> anyhow::Result<Sql> {
+        let mut collector = Sql::default();
         if let Some(insert_manager) = &self.insert_manager {
             visitors::to_sql::accept_insert_manager(insert_manager, &mut collector)?;
         } else if let Some(update_manager) = &self.update_manager {
@@ -334,7 +334,10 @@ impl<M> Table<M> where M: ArelAble {
         }  else {
             return Err(anyhow::anyhow!("Not support"));
         }
-        Ok(collector.value)
+        Ok(collector)
+    }
+    pub fn to_sql_string(&mut self) -> anyhow::Result<String> {
+        self.to_sql()?.to_sql_string()
     }
 }
 
@@ -343,20 +346,15 @@ impl<M> Table<M> where M: ArelAble {
 impl<M> Table<M> where M: ArelAble {
     pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
         let sql = self.to_sql()?;
-        let db_state = crate::visitors::get_db_state()?;
-        let row = sqlx::query(&sql).fetch_one(db_state.pool()).await?;
+        let row = sql.fetch_one().await?;
         Ok(M::new_from_db_row(row)?)
     }
     pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
         let sql = self.to_sql()?;
-        let db_state = crate::visitors::get_db_state()?;
-        let rows = sqlx::query(&sql).fetch_all(db_state.pool()).await?;
+        let rows = sql.fetch_all().await?;
         rows.into_iter().map(|row| M::new_from_db_row(row)).collect()
     }
     pub async fn execute(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
-        let sql = self.to_sql()?;
-        let db_state = crate::visitors::get_db_state()?;
-        let query_result = sqlx::query(&sql).execute(db_state.pool()).await?;
-        Ok(query_result)
+        self.to_sql()?.execute().await
     }
 }

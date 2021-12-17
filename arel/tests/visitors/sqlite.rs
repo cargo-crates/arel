@@ -24,7 +24,7 @@ mod sqlite_sqlx {
         for i in 0..10 {
             sqlx::query(&User::create(json!({
                 "desc": format!("test-{}", i)
-            })).to_sql()?).execute(db_state.pool()).await?;
+            })).to_sql_string()?).execute(db_state.pool()).await?;
         }
 
         Ok(())

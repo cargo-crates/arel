@@ -6,7 +6,7 @@ use crate::statements::{StatementAble, select::{Select, Op}, r#where::{self, Whe
 use std::default::Default;
 use crate::traits::ArelAble;
 use std::marker::PhantomData;
-use crate::nodes::{SqlLiteral};
+use crate::collectors::Sql;
 
 #[derive(Clone, Debug)]
 pub struct SelectCore<M: ArelAble> {
@@ -67,18 +67,18 @@ impl<M> SelectCore<M> where M: ArelAble {
         self.select.distinct = true;
         self
     }
-    pub fn get_select_sql(&self) -> anyhow::Result<SqlLiteral> {
-        let mut sql = "SELECT ".to_string();
-        sql.push_str(&self.select.to_sql()?);
-        Ok(SqlLiteral::new(sql))
+    pub fn get_select_sql(&self) -> anyhow::Result<Sql> {
+        let mut sql = self.select.to_sql()?;
+        sql.value = format!("SELECT {}", &sql.value);
+        Ok(sql)
     }
     pub fn joins(&mut self, condition: Json) -> &mut Self {
         self.join_source = Some(JoinSource::<M>::new(condition));
         self
     }
-    pub fn get_joins_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_joins_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(join_source) = &self.join_source {
-            Ok(Some(SqlLiteral::new(join_source.to_sql()?)))
+            Ok(Some(join_source.to_sql()?))
         } else {
             Ok(None)
         }
@@ -87,33 +87,33 @@ impl<M> SelectCore<M> where M: ArelAble {
         self.wheres.push(Where::<M>::new(condition, ops));
         self
     }
-    pub fn get_where_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_where_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.r#wheres.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(and::to_sql(&self.r#wheres)?)))
+            Ok(Some(and::to_sql(&self.r#wheres)?))
         }
     }
     pub fn group(&mut self, condition: Json) -> &mut Self {
         self.groups.push(Group::<M>::new(condition));
         self
     }
-    pub fn get_group_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_group_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.groups.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(helpers::inject_join(&self.groups, ", ")?)))
+            Ok(Some(helpers::inject_join(&self.groups, ", ")?))
         }
     }
     pub fn having(&mut self, condition: Json, ops: having::Ops) -> &mut Self {
         self.havings.push(Having::<M>::new(condition, ops));
         self
     }
-    pub fn get_having_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_having_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.havings.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(and::to_sql(&self.havings)?)))
+            Ok(Some(and::to_sql(&self.havings)?))
         }
     }
 }

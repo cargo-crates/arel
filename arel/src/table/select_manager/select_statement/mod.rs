@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use serde_json::Value as Json;
 use crate::traits::ArelAble;
 use crate::statements::{StatementAble, Order, Limit, Offset, Lock, helpers};
-use crate::nodes::{SqlLiteral};
+use crate::collectors::{Sql};
 
 #[derive(Clone, Debug)]
 pub struct SelectStatement<M: ArelAble> {
@@ -40,9 +40,9 @@ impl<M> SelectStatement<M> where M: ArelAble {
         self.lock = Some(Lock::<M>::new(condition));
         self
     }
-    pub fn get_lock_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_lock_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(lock) = &self.lock {
-            Ok(Some(SqlLiteral::new(lock.to_sql()?)))
+            Ok(Some(lock.to_sql()?))
         } else {
             Ok(None)
         }
@@ -51,20 +51,20 @@ impl<M> SelectStatement<M> where M: ArelAble {
         self.orders.push(Order::new(condition));
         self
     }
-    pub fn get_order_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_order_sql(&self) -> anyhow::Result<Option<Sql>> {
         if self.orders.len() == 0 {
             Ok(None)
         } else {
-            Ok(Some(SqlLiteral::new(helpers::inject_join(&self.orders, ", ")?)))
+            Ok(Some(helpers::inject_join(&self.orders, ", ")?))
         }
     }
     pub fn limit(&mut self, condition: usize) -> &mut Self {
         self.limit = Some(Limit::new(condition));
         self
     }
-    pub fn get_limit_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_limit_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(limit) = &self.limit {
-            Ok(Some(SqlLiteral::new(limit.to_sql()?)))
+            Ok(Some(limit.to_sql()?))
         } else {
             Ok(None)
         }
@@ -73,9 +73,9 @@ impl<M> SelectStatement<M> where M: ArelAble {
         self.offset = Some(Offset::new(condition));
         self
     }
-    pub fn get_offset_sql(&self) -> anyhow::Result<Option<SqlLiteral>> {
+    pub fn get_offset_sql(&self) -> anyhow::Result<Option<Sql>> {
         if let Some(offset) = &self.offset {
-            Ok(Some(SqlLiteral::new(offset.to_sql()?)))
+            Ok(Some(offset.to_sql()?))
         } else {
             Ok(None)
         }

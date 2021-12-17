@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::default::Default;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
-use crate::nodes::SqlLiteral;
+use crate::collectors::Sql;
 use crate::methods;
 
 #[derive(Clone, Debug)]
@@ -16,7 +16,7 @@ impl<M> StatementAble<M> for Group<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
+    fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -24,20 +24,20 @@ impl<M> StatementAble<M> for Group<M> where M: ArelAble {
                     for column_name in json_array.iter() {
                         if let Json::String(column_name) = column_name {
                             let table_column_name = methods::table_column_name::<M>(column_name);
-                            vec.push(SqlLiteral::new(format!("{}", table_column_name)));
+                            vec.push(Sql::new(format!("{}", table_column_name)));
                         } else {
                             return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                         }
                     }
                 },
-                Json::String(_) =>  vec.append(&mut StatementAble::to_sql_literals_default(self)?),
+                Json::String(_) =>  vec.append(&mut StatementAble::default_to_sub_sqls(self)?),
                 _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }
         // Ok(vec.join(" AND "))
         Ok(vec)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         self.to_sql_with_concat(", ")
     }
 }
@@ -74,9 +74,9 @@ mod tests {
         }
 
         let group = Group::<User>::new(json!("name, age"));
-        assert_eq!(group.to_sql().unwrap(), "name, age");
+        assert_eq!(group.to_sql_string().unwrap(), "name, age");
 
         let group = Group::<User>::new(json!(["name", "age"]));
-        assert_eq!(group.to_sql().unwrap(), "`users`.`name`, `users`.`age`");
+        assert_eq!(group.to_sql_string().unwrap(), "`users`.`name`, `users`.`age`");
     }
 }

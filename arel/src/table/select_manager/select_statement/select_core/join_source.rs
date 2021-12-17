@@ -2,6 +2,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::traits::ArelAble;
 use crate::statements::{Join, StatementAble};
+use crate::collectors::Sql;
 
 #[derive(Clone, Debug)]
 pub struct JoinSource<M: ArelAble> {
@@ -20,7 +21,10 @@ impl<M> JoinSource<M> where M: ArelAble {
             _marker: PhantomData,
         }
     }
-    pub fn to_sql(&self) -> anyhow::Result<String> {
+    pub fn to_sql(&self) -> anyhow::Result<Sql> {
         self.join.to_sql()
+    }
+    pub fn to_sql_string(&self) -> anyhow::Result<String> {
+        self.to_sql()?.to_sql_string()
     }
 }

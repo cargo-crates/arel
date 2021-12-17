@@ -1,2 +1,6 @@
 [workspace]
-members = ["arel_macro", "arel"]
+members = [
+    "arel_macro",
+    "arel",
+    "example_sqlite"
+]

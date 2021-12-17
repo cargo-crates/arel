@@ -2,7 +2,7 @@ use std::ops::{Bound, RangeBounds};
 use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::statements::StatementAble;
-use crate::nodes::SqlLiteral;
+use crate::collectors::Sql;
 use crate::traits::ArelAble;
 use crate::methods;
 
@@ -38,7 +38,7 @@ impl<M> StatementAble<M> for Where<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
+    fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -46,7 +46,10 @@ impl<M> StatementAble<M> for Where<M> where M: ArelAble {
                     for column_name in json_object.keys() {
                         let table_column_name = methods::table_column_name::<M>(column_name);
                         let json_value = json_object.get(column_name).unwrap();
-                        vec.push(SqlLiteral::new(format!("{} {}", table_column_name, self.json_value_sql(json_value, true)?)));
+
+                        let mut sql = Sql::new(table_column_name);
+                        sql.push_str(" ").push_from_sql(&self.value_sql_from_json(json_value, true)?);
+                        vec.push(sql);
                     }
                 },
                 _ => {
@@ -54,24 +57,30 @@ impl<M> StatementAble<M> for Where<M> where M: ArelAble {
                         match json_value {
                             // json([column_name, start, end])
                             Json::Array(json_array) if json_array.len() == 3 => {
-                                let table_column_name = methods::table_column_name::<M>(&self.json_value_sql(json_array.get(0).unwrap(), false)?);
-                                let between_sql = format!("BETWEEN {} AND {}", self.json_value_sql(json_array.get(1).unwrap(), false)?, self.json_value_sql(json_array.get(2).unwrap(), false)?);
+                                let table_column_name = methods::table_column_name::<M>(&self.value_sql_from_json(json_array.get(0).unwrap(), false)?.value);
+                                let start_sql = self.value_sql_from_json(json_array.get(1).unwrap(), false)?;
+                                let end_sql = self.value_sql_from_json(json_array.get(2).unwrap(), false)?;
+                                // let between_sql = format!("BETWEEN {} AND {}", self.value_sql_from_json(json_array.get(1).unwrap(), false)?, );
                                 if self.ops.is_not {
-                                    vec.push(SqlLiteral::new(format!("{} NOT {}", table_column_name, between_sql)));
+                                    let mut sql = Sql::new(table_column_name);
+                                    sql.push_str(" NOT BETWEEN ").push_from_sql(&start_sql).push_str(" AND ").push_from_sql(&end_sql);
+                                    vec.push(sql);
                                 }
                                 else {
-                                    vec.push(SqlLiteral::new(format!("{} {}", table_column_name, between_sql)));
+                                    let mut sql = Sql::new(table_column_name);
+                                    sql.push_str(" BETWEEN ").push_from_sql(&start_sql).push_str(" AND ").push_from_sql(&end_sql);
+                                    vec.push(sql);
                                 }
                             },
                             Json::String(_) => {
-                                vec.append(&mut StatementAble::to_sql_literals_default(self)?)
+                                vec.append(&mut StatementAble::default_to_sub_sqls(self)?)
                             },
                             _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                         }
                     } else if self.ops.is_not {
                         return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                     } else {
-                        vec.append(&mut StatementAble::to_sql_literals_default(self)?)
+                        vec.append(&mut StatementAble::default_to_sub_sqls(self)?)
                     }
                 },
             }
@@ -79,10 +88,14 @@ impl<M> StatementAble<M> for Where<M> where M: ArelAble {
         // Ok(vec.join(" AND "))
         Ok(vec)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         match self.ops.join_type {
-            JoinType::And => Ok(self.to_sql_with_concat(" AND ")?),
-            JoinType::Or => Ok(format!("({})", self.to_sql_with_concat(" OR ")?))
+            JoinType::And => self.to_sql_with_concat(" AND "),
+            JoinType::Or => {
+                let mut sql = self.to_sql_with_concat(" OR ")?;
+                sql.value = format!("({})", &sql.value);
+                Ok(sql)
+            }
         }
     }
 }
@@ -95,54 +108,96 @@ impl<M> Where<M> where M: ArelAble {
             _marker: PhantomData,
         }
     }
-    fn json_value_sql(&self, json_value: &Json, with_modifier: bool) -> anyhow::Result<String> {
+    fn value_sql_from_json(&self, json_value: &Json, with_modifier: bool) -> anyhow::Result<Sql> {
+        let mut sql = Sql::default();
         match json_value {
             Json::Array(json_array) => {
                 let mut values = vec![];
                 for json_value in json_array.iter() {
-                    values.push(self.json_value_sql(json_value, false)?);
+                    values.push(self.value_sql_from_json(json_value, false)?);
                 }
                 if self.ops.is_between {
                     if json_array.len() == 2 && with_modifier {
-                        let between_sql = format!("BETWEEN {} AND {}", values.get(0).unwrap(), values.get(1).unwrap());
-                        if self.ops.is_not { Ok(format!("NOT {}", &between_sql)) } else { Ok(format!("{}", &between_sql)) }
+                        let start_sql = values.get(0).unwrap();
+                        let end_sql = values.get(1).unwrap();
+                        eprintln!("-----{:?}, {:?}, op: {:?}", start_sql, end_sql, self.ops);
+                        if self.ops.is_not {
+                            sql.push_str("NOT BETWEEN ").push_from_sql(start_sql).push_str(" AND ").push_from_sql(end_sql);
+                            Ok(sql)
+                        } else {
+                            sql.push_str("BETWEEN ").push_from_sql(start_sql).push_str(" AND ").push_from_sql(end_sql);
+                            Ok(sql)
+                        }
                     } else {
                         return Err(anyhow::anyhow!("Error: {:?} Not Support, Between statement Array must 2 length", self.json_value()))
                     }
                 } else {
-                    let value = format!("({})", values.join(", "));
                     if with_modifier {
-                        if self.ops.is_not { Ok(format!("NOT IN {}", value)) } else { Ok(format!("IN {}", value)) }
+                        if self.ops.is_not {
+                            sql.push_str("NOT IN (").push_from_sqls(&values, ", ").push_str(")");
+                            Ok(sql)
+                        } else {
+                            sql.push_str("IN (").push_from_sqls(&values, ", ").push_str(")");
+                            Ok(sql)
+                        }
                     } else {
-                        Ok(value)
+                        sql.push_from_sqls(&values, ", ");
+                        Ok(sql)
                     }
                 }
             },
             Json::String(json_string) => {
                 if with_modifier {
-                    if self.ops.is_not { Ok(format!("!= '{}'", json_string)) } else { Ok(format!("= '{}'", json_string)) }
+                    if self.ops.is_not {
+                        sql.push_str(&format!("!= '{}'", json_string));
+                        Ok(sql)
+                    } else {
+                        sql.push_str(&format!("= '{}'", json_string));
+                        Ok(sql)
+                    }
                 } else {
-                    Ok(format!("'{}'", json_string))
+                    sql.push_str(&format!("'{}'", json_string));
+                    Ok(sql)
                 }
             },
             Json::Number(json_number) => {
                 if with_modifier {
-                    if self.ops.is_not { Ok(format!("!= {}", json_number)) } else { Ok(format!("= {}", json_number)) }
+                    if self.ops.is_not {
+                        sql.push_str(&format!("!= {}", json_number));
+                        Ok(sql)
+                    } else {
+                        sql.push_str(&format!("= {}", json_number));
+                        Ok(sql)
+                    }
                 } else {
-                    Ok(format!("{}", json_number))
+                    sql.push_str(&format!("{}", json_number));
+                    Ok(sql)
                 }
             },
             Json::Bool(json_bool) => {
                 let value = if *json_bool {1} else {0};
                 if with_modifier {
-                    if self.ops.is_not { Ok(format!("!= {}", value)) } else { Ok(format!("= {}", value)) }
+                    if self.ops.is_not {
+                        sql.push_str(&format!("!= {}", value));
+                        Ok(sql)
+                    } else {
+                        sql.push_str(&format!("= {}", value));
+                        Ok(sql)
+                    }
                 } else {
-                    Ok(format!("{}", value))
+                    sql.push_str(&format!("{}", value));
+                    Ok(sql)
                 }
             },
             Json::Null => {
                 if with_modifier {
-                    if self.ops.is_not { Ok(format!("IS NOT NULL")) } else { Ok(format!("IS NULL")) }
+                    if self.ops.is_not {
+                        sql.push_str(&format!("IS NOT NULL"));
+                        Ok(sql)
+                    } else {
+                        sql.push_str(&format!("IS NULL"));
+                        Ok(sql)
+                    }
                 } else {
                     return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                 }
@@ -202,7 +257,7 @@ mod tests {
              "active": true,
              "profile": null
          }), Ops::new(JoinType::And, false, false));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`active` = 1 AND `users`.`age` = 18 AND `users`.`gender` IN ('male', 'female') AND `users`.`name` = 'Tom' AND `users`.`profile` IS NULL AND `users`.`role` IN (1, 2)");
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`active` = 1 AND `users`.`age` = 18 AND `users`.`gender` IN ('male', 'female') AND `users`.`name` = 'Tom' AND `users`.`profile` IS NULL AND `users`.`role` IN (1, 2)");
         let r#where = Where::<User>::new(json!({
             "name": "Tom",
             "age": 18,
@@ -210,34 +265,35 @@ mod tests {
              "active": true,
              "profile": null
          }), Ops::new(JoinType::And, true, false));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`active` != 1 AND `users`.`age` != 18 AND `users`.`gender` NOT IN ('male', 'female') AND `users`.`name` != 'Tom' AND `users`.`profile` IS NOT NULL");
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`active` != 1 AND `users`.`age` != 18 AND `users`.`gender` NOT IN ('male', 'female') AND `users`.`name` != 'Tom' AND `users`.`profile` IS NOT NULL");
 
         let r#where = Where::<User>::new(json!("age > 18"), Ops::new(JoinType::And, false, false));
-        assert_eq!(r#where.to_sql().unwrap(), "age > 18");
+        assert_eq!(r#where.to_sql_string().unwrap(), "age > 18");
 
         let r#where = Where::<User>::new(json!(["age > 18"]), Ops::new(JoinType::And, false, false));
-        assert_eq!(r#where.to_sql().unwrap(), "age > 18");
+        assert_eq!(r#where.to_sql_string().unwrap(), "age > 18");
         let r#where = Where::<User>::new(json!(["name = ? AND age > ? AND gender in ? AND enable = ?", "Tom", 18, ["male", "female"], true]), Ops::new(JoinType::And, false, false));
-        assert_eq!(r#where.to_sql().unwrap(), "name = 'Tom' AND age > 18 AND gender in ('male', 'female') AND enable = 1");
+        assert_eq!(r#where.to_sql_string().unwrap(), "name = 'Tom' AND age > 18 AND gender in ('male', 'female') AND enable = 1");
+        assert_eq!(r#where.to_sql().unwrap().value, "name = ? AND age > ? AND gender in ? AND enable = ?");
 
         //between
         let r#where = Where::<User>::new(json!({"age": [18, 30]}), Ops::new(JoinType::And, false, true));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`age` BETWEEN 18 AND 30");
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`age` BETWEEN 18 AND 30");
         let r#where = Where::<User>::new(json!({"age": [18, 30]}), Ops::new(JoinType::And, true, true));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`age` NOT BETWEEN 18 AND 30");
-        let r#where = Where::<User>::new(json!(["age", 18, 30]), Ops::new(JoinType::And, false, true));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`'age'` BETWEEN 18 AND 30");
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`age` NOT BETWEEN 18 AND 30");
+        let r#where = Where::<User>::new(json!(["age", 19, 31]), Ops::new(JoinType::And, false, true));
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`'age'` BETWEEN 19 AND 31");
         let r#where = Where::<User>::new(json!(["age", 18, 30]), Ops::new(JoinType::And, true, true));
-        assert_eq!(r#where.to_sql().unwrap(), "`users`.`'age'` NOT BETWEEN 18 AND 30");
+        assert_eq!(r#where.to_sql_string().unwrap(), "`users`.`'age'` NOT BETWEEN 18 AND 30");
         // or between
         let r#where = Where::<User>::new(json!({"age": [18, 30], "name": "Tom"}), Ops::new(JoinType::Or, false, false));
-        assert_eq!(r#where.to_sql().unwrap(), "(`users`.`age` IN (18, 30) OR `users`.`name` = 'Tom')");
+        assert_eq!(r#where.to_sql_string().unwrap(), "(`users`.`age` IN (18, 30) OR `users`.`name` = 'Tom')");
         let r#where = Where::<User>::new(json!({"age": [18, 30], "name": "Tom"}), Ops::new(JoinType::Or, true, false));
-        assert_eq!(r#where.to_sql().unwrap(), "(`users`.`age` NOT IN (18, 30) OR `users`.`name` != 'Tom')");
+        assert_eq!(r#where.to_sql_string().unwrap(), "(`users`.`age` NOT IN (18, 30) OR `users`.`name` != 'Tom')");
         let r#where = Where::<User>::new(json!({"age": [18, 30], "name": "Tom"}), Ops::new(JoinType::Or, true, true));
-        assert_eq!(r#where.to_sql().unwrap(), "(`users`.`age` NOT BETWEEN 18 AND 30 OR `users`.`name` != 'Tom')");
+        assert_eq!(r#where.to_sql_string().unwrap(), "(`users`.`age` NOT BETWEEN 18 AND 30 OR `users`.`name` != 'Tom')");
         let r#where = Where::<User>::new(json!(["age", 18, 30]), Ops::new(JoinType::Or, true, true));
-        assert_eq!(r#where.to_sql().unwrap(), "(`users`.`'age'` NOT BETWEEN 18 AND 30)");
+        assert_eq!(r#where.to_sql_string().unwrap(), "(`users`.`'age'` NOT BETWEEN 18 AND 30)");
     }
 }
 

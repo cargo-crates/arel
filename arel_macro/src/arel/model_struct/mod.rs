@@ -51,7 +51,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             #builder_fields_def
         }
         // impl ArelAble for User {}
-        #[async_trait::async_trait]
+        #[arel::async_trait::async_trait]
         impl #impl_generics arel::ArelAble for #arel_struct_ident #type_generics #where_clause {
             type PersistedRowRecord = #arel_struct_row_record_ident #type_generics;
             #builder_impl_arel_functions_def
@@ -63,31 +63,31 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                     None
                 }
             }
-            // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> anyhow::Result<Self>
-            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> anyhow::Result<Self #type_generics> {
+            // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self>
+            // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
+            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self #type_generics> {
                 let persisted_row_record = #arel_struct_row_record_ident::new_from_db_row(db_row)?;
                 Ok(Self {
                     #(#idents: persisted_row_record.#idents.clone(),)*
                     persisted_row_record: std::option::Option::Some(persisted_row_record),
                 })
             }
-            // fn assign_from_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>
-            fn assign_from_persisted_row_record(&mut self) -> anyhow::Result<&mut Self #type_generics> {
+            // fn assign_from_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self>
+            fn assign_from_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self #type_generics> {
                 if let Some(persisted_row_record) = &self.persisted_row_record {
                     #(self.#idents = persisted_row_record.#idents.clone();)*
                 }
                 Ok(self)
             }
-            // fn assign_to_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>
-            fn assign_to_persisted_row_record(&mut self) -> anyhow::Result<&mut Self #type_generics> {
+            // fn assign_to_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self>
+            fn assign_to_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self #type_generics> {
                 let persisted_row_record = #arel_struct_row_record_ident #type_generics::new_from_model(self);
                 self.persisted_row_record = std::option::Option::Some(persisted_row_record);
                 Ok(self)
             }
-            // fn changed_attrs_json(&self) -> std::option::Option<serde_json::Value>
-            fn changed_attrs_json(&self) -> std::option::Option<serde_json::Value> {
-                let mut map = serde_json::Map::new();
+            // fn changed_attrs_json(&self) -> std::option::Option<arel::serde_json::Value>
+            fn changed_attrs_json(&self) -> std::option::Option<arel::serde_json::Value> {
+                let mut map = arel::serde_json::Map::new();
                 let mut exists_changed = false;
                 for attr in Self::table_column_names().iter() {
                     if self.attr_json(attr) != self.persisted_attr_json(attr) {
@@ -95,27 +95,27 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                         if let std::option::Option::Some(value) = self.attr_json(attr) {
                             map.insert(attr.to_string(), value);
                         } else {
-                            map.insert(attr.to_string(), serde_json::json!(null));
+                            map.insert(attr.to_string(), arel::serde_json::json!(null));
                         }
                     }
                 }
                 if exists_changed {
-                    std::option::Option::Some(serde_json::Value::Object(map))
+                    std::option::Option::Some(arel::serde_json::Value::Object(map))
                 } else {
                     std::option::Option::None
                 }
             }
-            // async fn save(&mut self) -> anyhow::Result<()>
-            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-            async fn save(&mut self) -> anyhow::Result<()> {
+            // async fn save(&mut self) -> arel::anyhow::Result<()>
+            // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
+            async fn save(&mut self) -> arel::anyhow::Result<()> {
                 let primary_key = Self::primary_key();
                 let primary_key_value = self.persisted_attr_json(primary_key);
 
                 if let Some(json) = self.changed_attrs_json() {
                     if let Some(primary_key_value) = primary_key_value {
-                        let mut where_clause = serde_json::Map::new();
+                        let mut where_clause = arel::serde_json::Map::new();
                         where_clause.insert(primary_key.to_string(), primary_key_value);
-                        Self::update_all(json).r#where(serde_json::Value::Object(where_clause)).execute().await?;
+                        Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute().await?;
                     } else {
                         let ret = Self::create(json).execute().await?;
                         if let std::option::Option::Some(id) = ret.last_insert_id() {
@@ -126,19 +126,19 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 }
                 Ok(())
             }
-            // async fn delete(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult>
-            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-            async fn delete(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
+            // async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult>
+            // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
+            async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult> {
                 let primary_key = Self::primary_key();
                 let primary_key_value = self.persisted_attr_json(primary_key);
                 if let Some(primary_key_value) = primary_key_value {
-                    let mut where_clause = serde_json::Map::new();
+                    let mut where_clause = arel::serde_json::Map::new();
                     where_clause.insert(primary_key.to_string(), primary_key_value);
-                    let ret = Self::delete_all(serde_json::Value::Object(where_clause)).execute().await?;
+                    let ret = Self::delete_all(arel::serde_json::Value::Object(where_clause)).execute().await?;
                     self.persisted_row_record = std::option::Option::None;
                     Ok(ret)
                 } else {
-                    return Err(anyhow::anyhow!("Record Is Not Persisted: {:?}", self));
+                    return Err(arel::anyhow::anyhow!("Record Is Not Persisted: {:?}", self));
                 }
             }
         }

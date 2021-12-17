@@ -41,9 +41,9 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
         }
         // impl UserRowRecord
         impl #impl_generics #arel_struct_row_record_ident #type_generics #where_clause {
-            // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> anyhow::Result<Self>
-            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> anyhow::Result<Self #type_generics> {
+            // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self>
+            // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
+            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self #type_generics> {
                 Ok(Self {
                     #(#init_from_db_row_init_token_streams)*
                 })

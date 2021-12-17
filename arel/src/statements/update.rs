@@ -2,7 +2,7 @@ use serde_json::{Value as Json};
 use std::marker::PhantomData;
 use crate::traits::ArelAble;
 use crate::statements::StatementAble;
-use crate::nodes::SqlLiteral;
+use crate::collectors::Sql;
 
 #[derive(Clone, Debug)]
 pub struct Update<M: ArelAble> {
@@ -14,7 +14,7 @@ impl<M> StatementAble<M> for Update<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql_literals(&self) -> anyhow::Result<Vec<SqlLiteral>> {
+    fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
             match json_value {
@@ -29,16 +29,16 @@ impl<M> StatementAble<M> for Update<M> where M: ArelAble {
                         #[cfg(not(feature = "sqlite"))]
                         let table_column_name = crate::methods::table_column_name::<M>(column_name);
                         let json_value = json_object.get(column_name).unwrap();
-                        vec.push(SqlLiteral::new(format!("{} = {}", table_column_name, self.json_value_sql(json_value)?)));
+                        vec.push(Sql::new(format!("{} = {}", table_column_name, self.value_sql_string_from_json(json_value)?)));
                     }
                 },
-                _ => vec.append(&mut StatementAble::to_sql_literals_default(self)?)
+                _ => vec.append(&mut StatementAble::default_to_sub_sqls(self)?)
             }
         }
         // Ok(vec.join(", "))
         Ok(vec)
     }
-    fn to_sql(&self) -> anyhow::Result<String> {
+    fn to_sql(&self) -> anyhow::Result<Sql> {
         self.to_sql_with_concat(", ")
     }
 }
@@ -72,12 +72,12 @@ mod tests {
             "active": true,
             "profile": null
         }));
-        assert_eq!(update.to_sql().unwrap(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = NULL");
+        assert_eq!(update.to_sql_string().unwrap(), "`users`.`active` = 1, `users`.`age` = 18, `users`.`name` = 'Tome', `users`.`profile` = NULL");
 
         let update = Update::<User>::new(serde_json::json!("users.active = 1"));
-        assert_eq!(update.to_sql().unwrap(), "users.active = 1");
+        assert_eq!(update.to_sql_string().unwrap(), "users.active = 1");
 
         let update = Update::<User>::new(serde_json::json!(["users.active = ?", 1]));
-        assert_eq!(update.to_sql().unwrap(), "users.active = 1");
+        assert_eq!(update.to_sql_string().unwrap(), "users.active = 1");
     }
 }
