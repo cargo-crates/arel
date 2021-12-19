@@ -21,4 +21,4 @@ jobs:
     - name: Run tests with mysql features
       run: cargo test -p arel --features mysql --verbose
     - name: Run sqlx tests with sqlite features
-      run: cargo test -p arel --features sqlite --verbose
+      run: cargo test sqlx -p arel --features sqlite --verbose

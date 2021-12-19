@@ -63,9 +63,9 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                     None
                 }
             }
-            // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self>
+            // fn new_from_db_row(db_row: arel::collectors::row::Row) -> arel::anyhow::Result<Self>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
-            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self #type_generics> {
+            fn new_from_db_row(db_row: arel::collectors::row::Row<Self>) -> arel::anyhow::Result<Self #type_generics> {
                 let persisted_row_record = #arel_struct_row_record_ident::new_from_db_row(db_row)?;
                 Ok(Self {
                     #(#idents: persisted_row_record.#idents.clone(),)*

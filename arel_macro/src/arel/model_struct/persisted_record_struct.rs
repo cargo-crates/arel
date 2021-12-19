@@ -29,7 +29,7 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
             r#type = inner_type;
         }
         quote::quote! {
-            #ident: if let Ok(value) = db_row.try_get::<#r#type, _>(stringify!(#ident)) { std::option::Option::Some(value.into()) } else { std::option::Option::None },
+            #ident: if let Ok(value) = db_row.sqlx_row.try_get::<#r#type, _>(stringify!(#ident)) { std::option::Option::Some(value.into()) } else { std::option::Option::None },
         }
     }).collect();
 
@@ -43,7 +43,7 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
         impl #impl_generics #arel_struct_row_record_ident #type_generics #where_clause {
             // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
-            fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self #type_generics> {
+            fn new_from_db_row(db_row: arel::collectors::row::Row<#struct_ident>) -> arel::anyhow::Result<Self #type_generics> {
                 Ok(Self {
                     #(#init_from_db_row_init_token_streams)*
                 })

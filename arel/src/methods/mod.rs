@@ -32,14 +32,26 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
 /// ```
 pub fn table_column_name<M: ArelAble>(column_name: &str) -> String {
     if column_name == "*" {
-        format!("`{}`.{}", M::table_name(), column_name)
+        #[cfg(feature = "sqlite")]
+        let _value = format!("{}", column_name);
+        #[cfg(not(feature = "sqlite"))]
+        let _value = format!("`{}`.{}", M::table_name(), column_name);
+        _value
     } else if Regex::new(r"\.").unwrap().is_match(column_name) {
         format!("{}", column_name)
     } else {
-        format!("`{}`.`{}`", M::table_name(), column_name)
+        #[cfg(feature = "sqlite")]
+        let _value = format!("\"{}\".\"{}\"", M::table_name(), column_name);
+        #[cfg(not(feature = "sqlite"))]
+        let _value = format!("`{}`.`{}`", M::table_name(), column_name);
+        _value
     }
 }
 
 pub fn quote_table_name(table_name: &str) -> String {
-    format!("`{}`", table_name)
+    #[cfg(feature = "sqlite")]
+    let _value = format!("\"{}\"", table_name);
+    #[cfg(not(feature = "sqlite"))]
+    let _value = format!("`{}`", table_name);
+    _value
 }

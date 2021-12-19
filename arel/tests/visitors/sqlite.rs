@@ -2,7 +2,6 @@
 #[cfg(test)]
 #[cfg(feature = "sqlite")]
 mod sqlite_sqlx {
-    use super::*;
     use arel::prelude::*;
 
     #[arel::arel]
@@ -38,6 +37,9 @@ mod sqlite_sqlx {
         assert_eq!(User::desc_table_column_name(), "desc");
         assert_eq!(User::done_table_column_name(), "done");
 
+        let count = User::fetch_count().await?;
+        assert_eq!(count, 10);
+
         // query all
         let users = User::query().fetch_all().await?;
         assert_eq!(users.len(), 10);
@@ -46,6 +48,10 @@ mod sqlite_sqlx {
         User::update_all(json!({"desc": "update_1"})).execute().await?;
         let user = User::query().fetch_one().await?;
         assert_eq!(user.desc(), Some(&"update_1".to_string()));
+        let user = User::fetch_first().await?;
+        assert_eq!(user.id(), Some(&1));
+        let user = User::fetch_last().await?;
+        assert_eq!(user.id(), Some(&10));
 
         // delete batch
         User::delete_all(json!(["id > ?", 5])).execute().await?;

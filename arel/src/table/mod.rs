@@ -16,6 +16,8 @@ use crate::collectors::{Sql};
 use crate::visitors;
 use crate::statements::{r#where, having};
 use crate::methods;
+#[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+use crate::collectors::row::Row;
 // pub trait ManagerStatement<M: ArelAble> {}
 
 #[derive(Clone, Debug)]
@@ -346,13 +348,29 @@ impl<M> Table<M> where M: ArelAble {
 impl<M> Table<M> where M: ArelAble {
     pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
         let sql = self.to_sql()?;
-        let row = sql.fetch_one().await?;
-        Ok(M::new_from_db_row(row)?)
+        let sqlx_row = sql.fetch_one().await?;
+        Ok(M::new_from_db_row(Row::<M>::new(sqlx_row))?)
+    }
+    pub async fn fetch_first(&mut self) -> anyhow::Result<M> {
+        self.fetch_one().await
+    }
+    pub async fn fetch_last(&mut self) -> anyhow::Result<M> {
+        let mut map = serde_json::Map::new();
+        map.insert(M::primary_key().to_string(), json!("DESC"));
+        self.order(Json::Object(map)).fetch_one().await
     }
     pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
         let sql = self.to_sql()?;
-        let rows = sql.fetch_all().await?;
-        rows.into_iter().map(|row| M::new_from_db_row(row)).collect()
+        let sqlx_rows = sql.fetch_all().await?;
+        sqlx_rows.into_iter().map(|sqlx_row| M::new_from_db_row(Row::<M>::new(sqlx_row))).collect()
+    }
+    pub async fn fetch_count(&mut self) -> anyhow::Result<i64> {
+        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one().await?;
+        let row = Row::<M>::new(sqlx_row);
+        match row.get_column_value_i64(row.column_names().get(0).ok_or(anyhow::anyhow!("Column is Blank"))?) {
+            Ok(count) => Ok(count),
+            Err(e) => Err(anyhow::anyhow!("{:?}", e.to_string())),
+        }
     }
     pub async fn execute(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
         self.to_sql()?.execute().await

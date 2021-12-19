@@ -1,5 +1,7 @@
 use serde_json::{Value as Json};
 use crate::table::Table;
+#[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+use crate::collectors::row::Row;
 
 /// Get Model's table name.
 ///
@@ -64,9 +66,17 @@ pub trait ArelAble: Sized {
     fn persisted_attr_json(&self, attr: &str) -> Option<Json>;
     fn changed_attrs_json(&self) -> std::option::Option<Json>;
     fn assign_from_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>;
-    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    fn new_from_db_row(db_row: sqlx::any::AnyRow) -> anyhow::Result<Self>;
     fn assign_to_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>;
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    fn new_from_db_row(db_row: Row<Self>) -> anyhow::Result<Self>;
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_one() -> anyhow::Result<Self> { Self::query().fetch_one().await }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_first() -> anyhow::Result<Self> { Self::query().fetch_first().await }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_last() -> anyhow::Result<Self> { Self::query().fetch_last().await }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_count() -> anyhow::Result<i64> { Self::query().fetch_count().await }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn save(&mut self) -> anyhow::Result<()>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
