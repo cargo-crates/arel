@@ -123,7 +123,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                     } else {
                         let ret = Self::create(json).execute().await?;
                         if let std::option::Option::Some(id) = ret.last_insert_id() {
-                            self.#primary_key_ident = std::option::Option::Some(id.into())
+                            self.#primary_key_ident = std::option::Option::Some(id.try_into()?)
                         }
                     }
                     self.assign_to_persisted_row_record()?;

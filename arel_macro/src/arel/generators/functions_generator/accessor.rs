@@ -1,4 +1,6 @@
 use expansion::helpers::{self, DeriveInputHelper};
+#[allow(unused_imports)]
+use syn::{spanned::Spanned};
 
 pub fn generate_struct_functions_define_of_getters(derive_input_helper: &DeriveInputHelper) -> syn::Result<proc_macro2::TokenStream> {
     let fields = derive_input_helper.get_fields()?;
@@ -52,7 +54,7 @@ pub fn generate_struct_functions_define_of_setters(derive_input_helper: &DeriveI
     let setter_token_streams: Vec<_> = fields.iter().filter_map(|f| {
         let r#type = &f.ty;
         if let Some(ident) = &f.ident {
-            let set_name_ident_name = format!("set_{}", ident.to_string());
+            let set_name_ident_name = format!("set_{}", ident.to_string().trim_start_matches("r#"));
             let set_name_ident = &syn::Ident::new(&set_name_ident_name, ident.span());
             if helpers::get_type_inner_type_ident(r#type, "Vec").is_some() || helpers::get_type_inner_type_ident(r#type, "Option").is_some() {
                 Some(quote::quote! {

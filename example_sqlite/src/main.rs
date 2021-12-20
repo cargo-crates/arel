@@ -3,9 +3,10 @@ use chrono::{TimeZone};
 
 #[arel::arel]
 struct User {
-    id: Option<i64>,
+    id: Option<i32>,
     desc: String,
     done: Option<bool>,
+    r#type: Option<i32>,
     expired_at: chrono::DateTime<chrono::Utc>,
 }
 

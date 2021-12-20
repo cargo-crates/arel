@@ -7,6 +7,7 @@ pub use sqlx::{self, Row as SqlxRow};
 #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
 pub use sqlx::any;
 pub use async_trait;
+pub use regex;
 pub use anyhow;
 pub use chrono;
 pub use serde;

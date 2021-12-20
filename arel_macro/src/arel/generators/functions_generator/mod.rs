@@ -16,7 +16,7 @@ pub fn generate_struct_functions_define(derive_input_helper: &DeriveInputHelper)
     {
         let column_names_token_stream = fields.iter().map(|f| {
             if let Some(origin_ident) = &f.ident {
-                let fn_name = &syn::Ident::new(&format!("{}_table_column_name", origin_ident.to_string()), f.span());
+                let fn_name = &syn::Ident::new(&format!("{}_table_column_name", origin_ident.to_string().trim_start_matches("r#")), f.span());
                 let metas = helpers::parse_attrs_to_metas(&f.attrs)?;
                 if let Some(rename_ident) = helpers::get_macro_attr_value_ident(metas.iter().collect(), "table_column_name", Some(vec!["arel"]), Some(vec!["table_column_name"]))? {
                     Ok(quote::quote! {
@@ -86,7 +86,7 @@ pub fn generate_struct_impl_arel_functions_define(derive_input_helper: &DeriveIn
     {
         let get_table_column_names: Vec<_> = fields.iter().filter_map(|f| {
             if let Some(ident) = &f.ident {
-                let get_column_name = format!("{}_table_column_name", ident.to_string());
+                let get_column_name = format!("{}_table_column_name", ident.to_string().trim_start_matches("r#"));
                 let get_column_name_ident = &syn::Ident::new(&get_column_name, f.ident.span());
                 Some(quote::quote! {
                     Self::#get_column_name_ident(),
