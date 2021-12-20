@@ -19,7 +19,7 @@ use chrono::{TimeZone};
 
 #[arel(table_name="users", primary_key="id")]
 struct User {
-    id: i64,
+    id: Option<i64>,
     name: String,
     expired_at: chrono::DateTime<chrono::Utc>,
 }

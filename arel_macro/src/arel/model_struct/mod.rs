@@ -29,6 +29,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
     let builder_fields_init_clauses = fields_generator::generate_struct_fields_init_clauses(derive_input_helper)?;
     let builder_functions_def_of_getters = functions_generator::accessor::generate_struct_functions_define_of_getters(derive_input_helper)?;
     let builder_functions_def_of_setters = functions_generator::accessor::generate_struct_functions_define_of_setters(derive_input_helper)?;
+    let builder_functions_def_of_validates = functions_generator::validator::generate_struct_functions_define_of_validates(derive_input_helper)?;
     let builder_functions_def = functions_generator::generate_struct_functions_define(derive_input_helper)?;
     let builder_impl_arel_functions_def = functions_generator::generate_struct_impl_arel_functions_define(derive_input_helper, args)?;
 
@@ -108,6 +109,9 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             // async fn save(&mut self) -> arel::anyhow::Result<()>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
             async fn save(&mut self) -> arel::anyhow::Result<()> {
+                // validates
+                self.validate()?;
+
                 let primary_key = Self::primary_key();
                 let primary_key_value = self.persisted_attr_json(primary_key);
 
@@ -153,6 +157,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             }
             #builder_functions_def_of_getters
             #builder_functions_def_of_setters
+            #builder_functions_def_of_validates
             #builder_functions_def
         }
     })

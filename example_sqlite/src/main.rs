@@ -3,7 +3,7 @@ use chrono::{TimeZone};
 
 #[arel::arel]
 struct User {
-    id: i64,
+    id: Option<i64>,
     desc: String,
     done: Option<bool>,
     expired_at: chrono::DateTime<chrono::Utc>,
@@ -37,8 +37,14 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
-    let count = User::query().where_range("expired_at", ..=expired_at).fetch_count().await?;
-    println!("{}", count);
+
+    let mut user = User::new();
+    user.set_desc("create desc".to_string())
+        .set_expired_at(expired_at.clone())
+        .save().await?;
+
+    // let count = User::query().where_range("expired_at", ..=expired_at).fetch_count().await?;
+    // println!("{}", count);
 
     // let mut user = User::query().r#where(json!(["id = ?", 1])).fetch_all().await?;
     // println!("--- find {:#?}", user);

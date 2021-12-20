@@ -7,7 +7,7 @@ mod sqlite_sqlx {
 
     #[arel::arel]
     struct User {
-        id: i64,
+        id: Option<i64>,
         desc: String,
         done: Option<bool>,
         expired_at: chrono::DateTime<chrono::Utc>,
