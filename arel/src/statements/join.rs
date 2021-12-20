@@ -14,16 +14,16 @@ impl<M> StatementAble<M> for Join<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
-    fn to_sql(&self) -> anyhow::Result<Sql> {
-        self.to_sql_with_concat(" ")
-    }
-    fn value_sql_string_from_json(&self, json_value: &Json) -> anyhow::Result<String> {
+    fn value_sql_string_from_json(json_value: &Json) -> anyhow::Result<String> {
         match json_value {
             Json::String(json_string) => {
                 Ok(format!("{}", json_string))
             },
-            _ => StatementAble::default_value_sql_string_from_json(self, json_value)
+            _ => Self::default_value_sql_string_from_json(json_value)
         }
+    }
+    fn to_sql(&self) -> anyhow::Result<Sql> {
+        self.to_sql_with_concat(" ")
     }
 }
 

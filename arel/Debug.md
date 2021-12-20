@@ -2,8 +2,8 @@
 
 ```bash
 # in workspace
-cargo expand --bin arel -p arel --features=sqlite,tokio
+cargo expand -p example_sqlite
 cargo test -p arel --features=mysql
 # only test sqlx about
-cargo test -p arel --features=sqlite
+cargo test sqlx -p arel --features=sqlite
 ```

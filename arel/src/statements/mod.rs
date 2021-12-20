@@ -29,6 +29,21 @@ use crate::collectors::Sql;
 
 pub trait StatementAble<M: ArelAble> {
     fn json_value(&self) -> Option<&Json>;
+    fn default_value_sql_string_from_json(json_value: &Json) -> anyhow::Result<String> {
+        match json_value {
+            Json::Array(json_array) => {
+                let mut values = vec![];
+                for json_value in json_array.iter() {
+                    values.push(Self::value_sql_string_from_json(json_value)?);
+                }
+                Ok(format!("({})", values.join(", ")))
+            },
+            _ => core_value_sql_string_from_json(json_value)
+        }
+    }
+    fn value_sql_string_from_json(json_value: &Json) -> anyhow::Result<String> {
+        Self::default_value_sql_string_from_json(json_value)
+    }
     fn default_to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
@@ -69,21 +84,6 @@ pub trait StatementAble<M: ArelAble> {
     // }
     fn to_sql_string(&self) -> anyhow::Result<String> {
         self.to_sql()?.to_sql_string()
-    }
-    fn default_value_sql_string_from_json(&self, json_value: &Json) -> anyhow::Result<String> {
-        match json_value {
-            Json::Array(json_array) => {
-                let mut values = vec![];
-                for json_value in json_array.iter() {
-                    values.push(self.value_sql_string_from_json(json_value)?);
-                }
-                Ok(format!("({})", values.join(", ")))
-            },
-            _ => core_value_sql_string_from_json(json_value)
-        }
-    }
-    fn value_sql_string_from_json(&self, json_value: &Json) -> anyhow::Result<String> {
-        self.default_value_sql_string_from_json(json_value)
     }
 }
 

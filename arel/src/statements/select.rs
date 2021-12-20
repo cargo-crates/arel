@@ -41,7 +41,7 @@ impl<M> StatementAble<M> for Select<M> where M: ArelAble {
                         }
                     }
                 },
-                Json::String(_) =>  vec.append(&mut StatementAble::default_to_sub_sqls(self)?),
+                Json::String(_) =>  vec.append(&mut self.default_to_sub_sqls()?),
                 _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
         }

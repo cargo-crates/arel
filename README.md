@@ -15,11 +15,13 @@ arel = { version = "*", features = ["sqlite"]}
 * Demo
 ```rust
 use arel::prelude::*;
+use chrono::{TimeZone};
 
 #[arel(table_name="users", primary_key="id")]
 struct User {
     id: i64,
     name: String,
+    expired_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[tokio::main]
@@ -30,13 +32,13 @@ async fn main() -> anyhow::Result<()> {
         .r#where(json!({"name": "Tom"}))
         .r#where(json!(["active = ?", true]))
         .where_not(json!({"status": [1, 2, 3]}))
-        .where_between(json!({"created_at": ["2021-12-01 00:00:00", "2021-12-31 23:59:59"]}))
         .where_or(json!({"login": false, "phone": null}))
-        .where_range("age", ..18)
+        .where_between(json!({"age": [18, 35]}))
+        .where_range("expired_at", ..=chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59))
         .distinct()
         .to_sql_string()
         .unwrap();
-    assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1 AND `users`.`status` NOT IN (1, 2, 3) AND `users`.`created_at` BETWEEN '2021-12-01 00:00:00' AND '2021-12-31 23:59:59' AND (`users`.`login` = 0 OR `users`.`phone` IS NULL) AND `users`.`age` < 18");
+    assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1 AND `users`.`status` NOT IN (1, 2, 3) AND (`users`.`login` = 0 OR `users`.`phone` IS NULL) AND `users`.`age` BETWEEN 18 AND 35 AND `users`.`expired_at` <= '2021-12-31T23:59:59Z'");
 
     // query batch vec<User>
     let users = User::query().fetch_all().await?;

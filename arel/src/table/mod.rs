@@ -92,7 +92,7 @@ impl<M> Table<M> where M: ArelAble {
     pub fn where_or_not_between(&mut self, condition: Json) -> &mut Self {
         self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true))
     }
-    pub fn where_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
+    pub fn where_range<T: serde::Serialize>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = r#where::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
         self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, false, true));
@@ -216,7 +216,7 @@ impl<M> Table<M> where M: ArelAble {
     pub fn having_or_not_between(&mut self, condition: Json) -> &mut Self {
         self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, true))
     }
-    pub fn having_range<T: ToString>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
+    pub fn having_range<T: serde::Serialize>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = having::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
         self._having_statement(json!(raw_sql), having::Ops::new(r#where::JoinType::And, false, true));

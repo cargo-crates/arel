@@ -3,12 +3,14 @@
 #[cfg(feature = "sqlite")]
 mod sqlite_sqlx {
     use arel::prelude::*;
+    use chrono::{TimeZone};
 
     #[arel::arel]
     struct User {
         id: i64,
         desc: String,
         done: Option<bool>,
+        expired_at: chrono::DateTime<chrono::Utc>,
     }
 
     async fn init_db() -> anyhow::Result<()> {
@@ -17,12 +19,14 @@ mod sqlite_sqlx {
             (
                 id          INTEGER PRIMARY KEY NOT NULL,
                 desc TEXT                NOT NULL,
-                done        BOOLEAN             NOT NULL DEFAULT 0
+                done        BOOLEAN             NOT NULL DEFAULT 0,
+                expired_at   DATETIME NOT NULL
             );"
         ).execute(db_state.pool()).await?;
         for i in 0..10 {
             sqlx::query(&User::create(json!({
-                "desc": format!("test-{}", i)
+                "desc": format!("test-{}", i),
+                "expired_at": "2021-01-01 00:00:00"
             })).to_sql_string()?).execute(db_state.pool()).await?;
         }
 
@@ -32,10 +36,11 @@ mod sqlite_sqlx {
     async fn main_test() -> anyhow::Result<()> {
         init_db().await?;
 
-        assert_eq!(User::table_column_names(), vec!["id", "desc", "done"]);
+        assert_eq!(User::table_column_names(), vec!["id", "desc", "done", "expired_at"]);
         assert_eq!(User::id_table_column_name(), "id");
         assert_eq!(User::desc_table_column_name(), "desc");
         assert_eq!(User::done_table_column_name(), "done");
+        assert_eq!(User::expired_at_table_column_name(), "expired_at");
 
         let count = User::fetch_count().await?;
         assert_eq!(count, 10);
@@ -69,9 +74,13 @@ mod sqlite_sqlx {
         let user = User::query().fetch_one().await?;
         assert_eq!(user.desc(), Some(&"custom desc".to_string()));
 
+        let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
+
         // create
         let mut user = User::new();
-        user.set_desc("create desc".to_string()).save().await?;
+        user.set_desc("create desc".to_string())
+            .set_expired_at(expired_at.clone())
+            .save().await?;
         let users = User::query().fetch_all().await?;
         assert_eq!(users.len(), 6);
 
@@ -80,6 +89,16 @@ mod sqlite_sqlx {
         let _result = user.delete().await?;
         let users = User::query().fetch_all().await?;
         assert_eq!(users.len(), 5);
+
+        // query_count
+        let count = User::fetch_count().await?;
+        assert_eq!(count, 5);
+        let count = User::query().where_range("expired_at", ..=expired_at).fetch_count().await?;
+        assert_eq!(count, 5);
+        let count = User::query().where_range("expired_at", ..expired_at).fetch_count().await?;
+        assert_eq!(count, 4);
+        let count = User::query().where_range("expired_at", expired_at..).fetch_count().await?;
+        assert_eq!(count, 1);
 
         Ok(())
     }

@@ -1,4 +1,5 @@
 use arel::prelude::*;
+use chrono::prelude::*;
 
 #[arel]
 struct User {
@@ -72,6 +73,11 @@ mod query {
         // range_between
         let sql = User::query().where_range("age", 18..=25).to_sql_string().unwrap();
         assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`age` BETWEEN 18 AND 25");
+
+        let start = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+        let end = Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
+        let sql = User::query().where_range("created_at", start..=end).to_sql_string().unwrap();
+        assert_eq!(sql, "SELECT `users`.* FROM `users` WHERE `users`.`created_at` BETWEEN '2021-01-01T00:00:00Z' AND '2021-12-31T23:59:59Z'");
     }
     #[test]
     fn test_lock() {

@@ -15,6 +15,14 @@ impl<M> StatementAble<M> for Order<M> where M: ArelAble {
     fn json_value(&self) -> Option<&Json> {
         Some(&self.value)
     }
+    fn value_sql_string_from_json(json_value: &Json) -> anyhow::Result<String> {
+        match json_value {
+            Json::String(json_string) => {
+                Ok(format!("{}", json_string))
+            },
+            _ => Self::default_value_sql_string_from_json(json_value)
+        }
+    }
     fn to_sub_sqls(&self) -> anyhow::Result<Vec<Sql>> {
         let mut vec = vec![];
         if let Some(json_value) = self.json_value() {
@@ -23,7 +31,7 @@ impl<M> StatementAble<M> for Order<M> where M: ArelAble {
                     for column_name in json_object.keys() {
                         let table_column_name = methods::table_column_name::<M>(column_name);
                         let json_value = json_object.get(column_name).unwrap();
-                        vec.push(Sql::new(format!("{} {}", table_column_name, self.value_sql_string_from_json(json_value)?.to_uppercase())));
+                        vec.push(Sql::new(format!("{} {}", table_column_name, Self::value_sql_string_from_json(json_value)?.to_uppercase())));
                     }
                 },
                 Json::Array(json_array) => {
@@ -35,7 +43,7 @@ impl<M> StatementAble<M> for Order<M> where M: ArelAble {
                         }
                     }
                 },
-                _ =>  vec.append(&mut StatementAble::default_to_sub_sqls(self)?),
+                _ =>  vec.append(&mut self.default_to_sub_sqls()?),
             }
         }
         // Ok(vec.join(" AND "))
@@ -43,14 +51,6 @@ impl<M> StatementAble<M> for Order<M> where M: ArelAble {
     }
     fn to_sql(&self) -> anyhow::Result<Sql> {
         self.to_sql_with_concat(", ")
-    }
-    fn value_sql_string_from_json(&self, json_value: &Json) -> anyhow::Result<String> {
-        match json_value {
-            Json::String(json_string) => {
-                Ok(format!("{}", json_string))
-            },
-            _ => StatementAble::default_value_sql_string_from_json(self, json_value)
-        }
     }
 }
 

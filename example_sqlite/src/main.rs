@@ -1,10 +1,12 @@
 use arel::prelude::*;
+use chrono::{TimeZone};
 
 #[arel::arel]
 struct User {
     id: i64,
     desc: String,
     done: Option<bool>,
+    expired_at: chrono::DateTime<chrono::Utc>,
 }
 
 async fn init_db() -> anyhow::Result<()> {
@@ -13,12 +15,14 @@ async fn init_db() -> anyhow::Result<()> {
             (
                 id          INTEGER PRIMARY KEY NOT NULL,
                 desc TEXT                NOT NULL,
-                done        BOOLEAN             NOT NULL DEFAULT 0
+                done        BOOLEAN             NOT NULL DEFAULT 0,
+                expired_at   DATETIME NOT NULL
             );"
     ).execute(db_state.pool()).await?;
     for i in 0..10 {
         User::create(json!({
-                "desc": format!("test-{}", i)
+                "desc": format!("test-{}", i),
+                "expired_at": "2021-12-31 23:59:59"
             })).execute().await?;
     }
 
@@ -32,7 +36,11 @@ async fn main() -> anyhow::Result<()> {
         println!("ok");
     }
 
-    let mut user = User::query().r#where(json!(["id = ?", 1])).fetch_one().await?;
+    let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
+    let count = User::query().where_range("expired_at", ..=expired_at).fetch_count().await?;
+    println!("{}", count);
+
+    // let mut user = User::query().r#where(json!(["id = ?", 1])).fetch_all().await?;
     // println!("--- find {:#?}", user);
     //
     // user.set_desc("hello world".to_string()).save().await?;

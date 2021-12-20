@@ -25,7 +25,7 @@ impl<M> StatementAble<M> for Insert<M> where M: ArelAble {
                     for column_name in json_object.keys() {
                         keys.push(format!("`{}`", column_name));
                         let json_value = json_object.get(column_name).unwrap();
-                        values.push(self.value_sql_string_from_json(json_value)?);
+                        values.push(Self::value_sql_string_from_json(json_value)?);
                     }
                     vec.push(Sql::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
                 },

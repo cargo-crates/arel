@@ -29,10 +29,10 @@ impl<M> StatementAble<M> for Update<M> where M: ArelAble {
                         #[cfg(not(feature = "sqlite"))]
                         let table_column_name = crate::methods::table_column_name::<M>(column_name);
                         let json_value = json_object.get(column_name).unwrap();
-                        vec.push(Sql::new(format!("{} = {}", table_column_name, self.value_sql_string_from_json(json_value)?)));
+                        vec.push(Sql::new(format!("{} = {}", table_column_name, Self::value_sql_string_from_json(json_value)?)));
                     }
                 },
-                _ => vec.append(&mut StatementAble::default_to_sub_sqls(self)?)
+                _ => vec.append(&mut self.default_to_sub_sqls()?)
             }
         }
         // Ok(vec.join(", "))

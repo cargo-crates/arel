@@ -1,7 +1,7 @@
 use std::ops::{Bound, RangeBounds};
-use serde_json::{Value as Json};
+use serde_json::{Value as Json, json};
 use std::marker::PhantomData;
-use crate::statements::StatementAble;
+use crate::statements::{self, StatementAble};
 use crate::collectors::Sql;
 use crate::traits::ArelAble;
 use crate::methods;
@@ -80,7 +80,7 @@ impl<M> StatementAble<M> for Where<M> where M: ArelAble {
                     } else if self.ops.is_not {
                         return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
                     } else {
-                        vec.append(&mut StatementAble::default_to_sub_sqls(self)?)
+                        vec.append(&mut self.default_to_sub_sqls()?)
                     }
                 },
             }
@@ -120,7 +120,6 @@ impl<M> Where<M> where M: ArelAble {
                     if json_array.len() == 2 && with_modifier {
                         let start_sql = values.get(0).unwrap();
                         let end_sql = values.get(1).unwrap();
-                        eprintln!("-----{:?}, {:?}, op: {:?}", start_sql, end_sql, self.ops);
                         if self.ops.is_not {
                             sql.push_str("NOT BETWEEN ").push_from_sql(start_sql).push_str(" AND ").push_from_sql(end_sql);
                             Ok(sql)
@@ -207,29 +206,36 @@ impl<M> Where<M> where M: ArelAble {
     }
 }
 
-pub fn help_range_to_sql<T: ToString>(table_column_name: &str, range: impl RangeBounds<T>) -> anyhow::Result<String> {
+pub fn help_range_to_sql<T: serde::Serialize>(table_column_name: &str, range: impl RangeBounds<T>) -> anyhow::Result<String> {
     let raw_sql;
+
+    let get_bound_value = |value: &T| {
+        let json_value = json!(value);
+        statements::core_value_sql_string_from_json(&json_value)
+    };
 
     match range.start_bound() {
         Bound::Unbounded => {
             match range.end_bound() {
                 Bound::Unbounded => return Err(anyhow::anyhow!("Error: Not Support")),
-                Bound::Included(end) => raw_sql = format!("{} <= {}", table_column_name, end.to_string()),
-                Bound::Excluded(end) => raw_sql = format!("{} < {}", table_column_name, end.to_string()),
+                Bound::Included(end) => raw_sql = format!("{} <= {}", table_column_name, get_bound_value(end)?),
+                Bound::Excluded(end) => raw_sql = format!("{} < {}", table_column_name, get_bound_value(end)?),
             }
         },
         Bound::Included(start) => {
             match range.end_bound() {
-                Bound::Unbounded => raw_sql = format!("{} >= {}", table_column_name, start.to_string()),
-                Bound::Included(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, start.to_string(), end.to_string()),
-                Bound::Excluded(end) => raw_sql = format!("{} >= {} AND {} < {}", table_column_name, start.to_string(), table_column_name, end.to_string()),
+                Bound::Unbounded => {
+                    raw_sql = format!("{} >= {}", table_column_name, get_bound_value(start)?)
+                },
+                Bound::Included(end) => raw_sql = format!("{} BETWEEN {} AND {}", table_column_name, get_bound_value(start)?, get_bound_value(end)?),
+                Bound::Excluded(end) => raw_sql = format!("{} >= {} AND {} < {}", table_column_name, get_bound_value(start)?, table_column_name, get_bound_value(end)?),
             }
         },
         Bound::Excluded(start) => {
             match range.end_bound() {
-                Bound::Unbounded => raw_sql = format!("{} > {}", table_column_name, start.to_string()),
-                Bound::Included(end) => raw_sql = format!("{} > {} AND {} <= {}", table_column_name, start.to_string(), table_column_name, end.to_string()),
-                Bound::Excluded(end) => raw_sql = format!("{} > {} AND {} < {}", table_column_name, start.to_string(), table_column_name, end.to_string()),
+                Bound::Unbounded => raw_sql = format!("{} > {}", table_column_name, get_bound_value(start)?),
+                Bound::Included(end) => raw_sql = format!("{} > {} AND {} <= {}", table_column_name, get_bound_value(start)?, table_column_name, get_bound_value(end)?),
+                Bound::Excluded(end) => raw_sql = format!("{} > {} AND {} < {}", table_column_name, get_bound_value(start)?, table_column_name, get_bound_value(end)?),
             }
         },
     }

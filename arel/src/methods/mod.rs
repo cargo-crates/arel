@@ -11,7 +11,8 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
     // eg: user_table
     let snake_struct_name = snakecase::to_snake_case(&struct_name);
     // eg: user_tables
-    pluralize::to_plural(Regex::new(r"_arel$").unwrap().replace(&snake_struct_name, "").as_ref())
+    // pluralize::to_plural(Regex::new(r"_arel$").unwrap().replace(&snake_struct_name, "").as_ref())
+    pluralize::to_plural(&snake_struct_name)
 }
 
 /// Get Model's table field name.
