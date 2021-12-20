@@ -31,7 +31,6 @@ pub trait ArelAble: Sized {
     fn table_name() -> String {
         Table::<Self>::table_name()
     }
-    fn table_column_names() -> Vec<&'static str>;
     fn table() -> Table<Self> {
         Table::<Self>::new()
     }
@@ -60,11 +59,15 @@ pub trait ArelAble: Sized {
         table.with_delete_manager().r#where(condition);
         table
     }
+    fn table_column_names() -> Vec<&'static str>;
+    fn attr_names() -> Vec<&'static str>;
+    fn attr_name_to_table_column_name<'a>(attr_name: &'a str) -> anyhow::Result<&'a str>;
+    fn table_column_name_to_attr_name<'a>(table_column_name: &'a str) -> anyhow::Result<&'a str>;
     // sqlx
     fn persisted_row_record(&self) -> Option<&Self::PersistedRowRecord>;
     fn attr_json(&self, attr: &str) -> Option<Json>;
     fn persisted_attr_json(&self, attr: &str) -> Option<Json>;
-    fn changed_attrs_json(&self) -> std::option::Option<Json>;
+    fn changed_attrs_json(&self) -> anyhow::Result<Option<Json>>;
     fn assign_from_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>;
     fn assign_to_persisted_row_record(&mut self) -> anyhow::Result<&mut Self>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]

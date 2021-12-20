@@ -21,6 +21,8 @@ use chrono::{TimeZone};
 struct User {
     id: Option<i64>,
     name: String,
+    #[arel(table_column_name="type")]
+    r#type: Option<i32>,
     expired_at: chrono::DateTime<chrono::Utc>,
 }
 

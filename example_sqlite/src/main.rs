@@ -1,11 +1,14 @@
 use arel::prelude::*;
 use chrono::{TimeZone};
 
-#[arel::arel]
+#[arel(primary_key="id")]
 struct User {
-    id: Option<i32>,
-    desc: String,
+    #[arel(table_column_name="id")]
+    uid: Option<i64>,
+    #[arel(table_column_name="desc")]
+    desc2: String,
     done: Option<bool>,
+    #[arel(table_column_name="type")]
     r#type: Option<i32>,
     expired_at: chrono::DateTime<chrono::Utc>,
 }
@@ -40,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
     let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
 
     let mut user = User::new();
-    user.set_desc("create desc".to_string())
+    user.set_desc2("create desc".to_string())
         .set_expired_at(expired_at.clone())
         .save().await?;
 
@@ -50,11 +53,11 @@ async fn main() -> anyhow::Result<()> {
     // let mut user = User::query().r#where(json!(["id = ?", 1])).fetch_all().await?;
     // println!("--- find {:#?}", user);
     //
-    // user.set_desc("hello world".to_string()).save().await?;
+    // user.set_desc2("hello world".to_string()).save().await?;
     // println!("--- update {:#?}", user);
 
     // let mut user = User::new();
-    // user.set_desc("hello world2".to_string()).save().await?;
+    // user.set_desc2("hello world2".to_string()).save().await?;
     // println!("--- create {:#?}", user);
 
 

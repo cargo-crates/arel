@@ -22,17 +22,25 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
 
     let (impl_generics, type_generics, where_clause) = derive_input_helper.value().generics.split_for_impl();
 
-    let init_from_db_row_init_token_streams: Vec<_> = fields.iter().map(|f| {
-        let ident = &f.ident;
-        let mut r#type = &f.ty;
-        if let Some(inner_type) = helpers::get_type_inner_type_ident(r#type, "Option") {
-            r#type = inner_type;
+    let mut init_from_db_row_init_token_streams: Vec<_> = vec![];
+    for f in fields.iter() {
+        if let Some(ident) = &f.ident {
+            let table_rename_ident;
+            let mut table_column_ident = ident;
+            let metas = helpers::parse_attrs_to_metas(&f.attrs)?;
+            if let Some(rename_ident) = helpers::get_macro_attr_value_ident(metas.iter().collect(), "table_column_name", Some(vec!["arel"]), None)? {
+                table_rename_ident = rename_ident;
+                table_column_ident = &table_rename_ident;
+            }
+            let mut r#type = &f.ty;
+            if let Some(inner_type) = helpers::get_type_inner_type_ident(r#type, "Option") {
+                r#type = inner_type;
+            }
+            init_from_db_row_init_token_streams.push(quote::quote! {
+                #ident: if let std::result::Result::Ok(value) = db_row.sqlx_row.try_get::<#r#type, _>(stringify!(#table_column_ident)) { std::option::Option::Some(value) } else { std::option::Option::None },
+            })
         }
-        quote::quote! {
-            #ident: if let Ok(value) = db_row.sqlx_row.try_get::<#r#type, _>(stringify!(#ident)) { std::option::Option::Some(value.into()) } else { std::option::Option::None },
-        }
-    }).collect();
-
+    }
     Ok(quote::quote! {
         // pub struct UserRowRecord{}
         #[derive(::core::clone::Clone, ::core::fmt::Debug)]
@@ -44,7 +52,7 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
             // fn new_from_db_row(db_row: sqlx::any::AnyRow) -> arel::anyhow::Result<Self>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
             fn new_from_db_row(db_row: arel::collectors::row::Row<#struct_ident>) -> arel::anyhow::Result<Self #type_generics> {
-                Ok(Self {
+                std::result::Result::Ok(Self {
                     #(#init_from_db_row_init_token_streams)*
                 })
             }

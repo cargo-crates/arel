@@ -12,14 +12,14 @@ pub fn generate_struct_functions_define_of_validates(derive_input_helper: &Deriv
             let ident = &f.ident;
             quote::quote! {
                     if self.#ident.is_none() {
-                        return Err(arel::anyhow::anyhow!("{} Not Allow None", stringify!(#ident)));
+                        return std::result::Result::Err(arel::anyhow::anyhow!("{} Not Allow None", stringify!(#ident)));
                     }
                 }
         }).collect();
         let validations_token_stream = quote::quote! {
             pub fn validate(&self) -> arel::anyhow::Result<()> {
                 #(#segments)*
-                Ok(())
+                std::result::Result::Ok(())
             }
         };
         final_token_stream.extend(validations_token_stream);

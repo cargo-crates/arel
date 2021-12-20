@@ -21,7 +21,7 @@ pub fn generate_struct_functions_define_of_getters(derive_input_helper: &DeriveI
         } else if let Some(inner_type) = helpers::get_type_inner_type_ident(r#type, "Option") {
             final_token_stream.extend(quote::quote! {
                     fn #ident(&self) -> std::option::Option<&#inner_type> {
-                        if let Some(value) = &self.#ident {
+                        if let std::option::Option::Some(value) = &self.#ident {
                             std::option::Option::Some(value)
                         } else {
                             std::option::Option::None
@@ -31,7 +31,7 @@ pub fn generate_struct_functions_define_of_getters(derive_input_helper: &DeriveI
         } else {
             final_token_stream.extend(quote::quote! {
                     fn #ident(&self) -> std::option::Option<&#r#type> {
-                        if let Some(value) = &self.#ident {
+                        if let std::option::Option::Some(value) = &self.#ident {
                             std::option::Option::Some(value)
                         } else {
                             std::option::Option::None

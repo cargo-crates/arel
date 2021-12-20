@@ -30,7 +30,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
     let builder_functions_def_of_getters = functions_generator::accessor::generate_struct_functions_define_of_getters(derive_input_helper)?;
     let builder_functions_def_of_setters = functions_generator::accessor::generate_struct_functions_define_of_setters(derive_input_helper)?;
     let builder_functions_def_of_validates = functions_generator::validator::generate_struct_functions_define_of_validates(derive_input_helper)?;
-    let builder_functions_def = functions_generator::generate_struct_functions_define(derive_input_helper)?;
+    // let builder_functions_def = functions_generator::generate_struct_functions_define(derive_input_helper)?;
     let builder_impl_arel_functions_def = functions_generator::generate_struct_impl_arel_functions_define(derive_input_helper, args)?;
 
     let (impl_generics, type_generics, where_clause) = derive_input_helper.value().generics.split_for_impl();
@@ -39,6 +39,19 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
     let mut primary_key_ident = syn::Ident::new("id", derive_input_helper.value().span());
     if let Some(ident) = helpers::get_macro_nested_attr_value_ident(args.iter().collect(), "primary_key", None, None)? {
         primary_key_ident = ident
+    }
+    // primary_attr_key_ident
+    let mut primary_attr_key_ident = primary_key_ident;
+    for f in fields.iter() {
+        if let Some(ident) = &f.ident {
+            let metas = helpers::parse_attrs_to_metas(&f.attrs)?;
+            if let Some(rename_ident) = helpers::get_macro_attr_value_ident(metas.iter().collect(), "table_column_name", Some(vec!["arel"]), None)? {
+                if rename_ident.to_string() == primary_attr_key_ident.to_string() {
+                    primary_attr_key_ident = syn::Ident::new(&ident.to_string(), ident.span());
+                    break;
+                }
+            }
+        }
     }
 
     // model
@@ -58,52 +71,52 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             #builder_impl_arel_functions_def
             // fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord>
             fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord> {
-                if let Some(persisted_row_record) = &self.persisted_row_record {
-                    Some(persisted_row_record)
+                if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
+                    std::option::Option::Some(persisted_row_record)
                 } else {
-                    None
+                    std::option::Option::None
                 }
             }
             // fn new_from_db_row(db_row: arel::collectors::row::Row) -> arel::anyhow::Result<Self>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
             fn new_from_db_row(db_row: arel::collectors::row::Row<Self>) -> arel::anyhow::Result<Self #type_generics> {
                 let persisted_row_record = #arel_struct_row_record_ident::new_from_db_row(db_row)?;
-                Ok(Self {
+                std::result::Result::Ok(Self {
                     #(#idents: persisted_row_record.#idents.clone(),)*
                     persisted_row_record: std::option::Option::Some(persisted_row_record),
                 })
             }
             // fn assign_from_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self>
             fn assign_from_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self #type_generics> {
-                if let Some(persisted_row_record) = &self.persisted_row_record {
+                if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
                     #(self.#idents = persisted_row_record.#idents.clone();)*
                 }
-                Ok(self)
+                std::result::Result::Ok(self)
             }
             // fn assign_to_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self>
             fn assign_to_persisted_row_record(&mut self) -> arel::anyhow::Result<&mut Self #type_generics> {
                 let persisted_row_record = #arel_struct_row_record_ident #type_generics::new_from_model(self);
                 self.persisted_row_record = std::option::Option::Some(persisted_row_record);
-                Ok(self)
+                std::result::Result::Ok(self)
             }
-            // fn changed_attrs_json(&self) -> std::option::Option<arel::serde_json::Value>
-            fn changed_attrs_json(&self) -> std::option::Option<arel::serde_json::Value> {
+            // fn changed_attrs_json(&self) -> anyhow::Result<std::option::Option<arel::serde_json::Value>>
+            fn changed_attrs_json(&self) -> anyhow::Result<std::option::Option<arel::serde_json::Value>> {
                 let mut map = arel::serde_json::Map::new();
                 let mut exists_changed = false;
-                for attr in Self::table_column_names().iter() {
+                for attr in Self::attr_names().iter() {
                     if self.attr_json(attr) != self.persisted_attr_json(attr) {
                         exists_changed = true;
                         if let std::option::Option::Some(value) = self.attr_json(attr) {
-                            map.insert(attr.to_string(), value);
+                            map.insert(Self::attr_name_to_table_column_name(attr)?.to_string(), value);
                         } else {
-                            map.insert(attr.to_string(), arel::serde_json::json!(null));
+                            map.insert(Self::attr_name_to_table_column_name(attr)?.to_string(), arel::serde_json::json!(null));
                         }
                     }
                 }
                 if exists_changed {
-                    std::option::Option::Some(arel::serde_json::Value::Object(map))
+                    std::result::Result::Ok(std::option::Option::Some(arel::serde_json::Value::Object(map)))
                 } else {
-                    std::option::Option::None
+                    std::result::Result::Ok(std::option::Option::None)
                 }
             }
             // async fn save(&mut self) -> arel::anyhow::Result<()>
@@ -113,34 +126,37 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 self.validate()?;
 
                 let primary_key = Self::primary_key();
-                let primary_key_value = self.persisted_attr_json(primary_key);
+                let primary_attr_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
+                let primary_attr_key_value = self.persisted_attr_json(primary_attr_key);
 
-                if let Some(json) = self.changed_attrs_json() {
-                    if let Some(primary_key_value) = primary_key_value {
+                if let std::option::Option::Some(json) = self.changed_attrs_json()? {
+                    if let Some(primary_attr_key_value) = primary_attr_key_value {
                         let mut where_clause = arel::serde_json::Map::new();
-                        where_clause.insert(primary_key.to_string(), primary_key_value);
+                        where_clause.insert(primary_key.to_string(), primary_attr_key_value);
                         Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute().await?;
                     } else {
                         let ret = Self::create(json).execute().await?;
                         if let std::option::Option::Some(id) = ret.last_insert_id() {
-                            self.#primary_key_ident = std::option::Option::Some(id.try_into()?)
+                            self.#primary_attr_key_ident = std::option::Option::Some(id.try_into()?)
                         }
                     }
                     self.assign_to_persisted_row_record()?;
                 }
-                Ok(())
+                std::result::Result::Ok(())
             }
             // async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
             async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult> {
                 let primary_key = Self::primary_key();
-                let primary_key_value = self.persisted_attr_json(primary_key);
-                if let Some(primary_key_value) = primary_key_value {
+                let primary_attr_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
+                let primary_attr_key_value = self.persisted_attr_json(primary_attr_key);
+
+                if let std::option::Option::Some(primary_attr_key_value) = primary_attr_key_value {
                     let mut where_clause = arel::serde_json::Map::new();
-                    where_clause.insert(primary_key.to_string(), primary_key_value);
+                    where_clause.insert(primary_key.to_string(), primary_attr_key_value);
                     let ret = Self::delete_all(arel::serde_json::Value::Object(where_clause)).execute().await?;
                     self.persisted_row_record = std::option::Option::None;
-                    Ok(ret)
+                    std::result::Result::Ok(ret)
                 } else {
                     return Err(arel::anyhow::anyhow!("Record Is Not Persisted: {:?}", self));
                 }
@@ -158,7 +174,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             #builder_functions_def_of_getters
             #builder_functions_def_of_setters
             #builder_functions_def_of_validates
-            #builder_functions_def
+            // #builder_functions_def
         }
     })
 }
