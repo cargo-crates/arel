@@ -346,33 +346,69 @@ impl<M> Table<M> where M: ArelAble {
 // sqlx
 #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
 impl<M> Table<M> where M: ArelAble {
-    pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
+    pub async fn fetch_one_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<M>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
         let sql = self.to_sql()?;
-        let sqlx_row = sql.fetch_one().await?;
+        let sqlx_row = sql.fetch_one(executor).await?;
         Ok(M::new_from_db_row(Row::<M>::new(sqlx_row))?)
     }
-    pub async fn fetch_first(&mut self) -> anyhow::Result<M> {
-        self.fetch_one().await
+    pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_one_with_executor(db_state.pool()).await
     }
-    pub async fn fetch_last(&mut self) -> anyhow::Result<M> {
+    pub async fn fetch_first_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<M>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        self.fetch_one_with_executor(executor).await
+    }
+    pub async fn fetch_first(&mut self) -> anyhow::Result<M> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_first_with_executor(db_state.pool()).await
+    }
+    pub async fn fetch_last_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<M>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
         let mut map = serde_json::Map::new();
         map.insert(M::primary_key().to_string(), json!("DESC"));
-        self.order(Json::Object(map)).fetch_one().await
+        self.order(Json::Object(map)).fetch_one_with_executor(executor).await
     }
-    pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
+    pub async fn fetch_last(&mut self) -> anyhow::Result<M> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_last_with_executor(db_state.pool()).await
+    }
+    pub async fn fetch_all_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<Vec<M>>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
         let sql = self.to_sql()?;
-        let sqlx_rows = sql.fetch_all().await?;
+        let sqlx_rows = sql.fetch_all(executor).await?;
         sqlx_rows.into_iter().map(|sqlx_row| M::new_from_db_row(Row::<M>::new(sqlx_row))).collect()
     }
-    pub async fn fetch_count(&mut self) -> anyhow::Result<i64> {
-        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one().await?;
+    pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
+        let db_state = crate::visitors::get_db_state()?;
+       self.fetch_all_with_executor(db_state.pool()).await
+    }
+    pub async fn fetch_count_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<i64>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one(executor).await?;
         let row = Row::<M>::new(sqlx_row);
         match row.get_column_value_i64(row.column_names().get(0).ok_or(anyhow::anyhow!("Column is Blank"))?) {
             Ok(count) => Ok(count),
             Err(e) => Err(anyhow::anyhow!("{:?}", e.to_string())),
         }
     }
+    pub async fn fetch_count(&mut self) -> anyhow::Result<i64> {
+        let db_state = crate::visitors::get_db_state()?;
+       self.fetch_count_with_executor(db_state.pool()).await
+    }
+    pub async fn execute_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        self.to_sql()?.execute(executor).await
+    }
     pub async fn execute(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
-        self.to_sql()?.execute().await
+        let db_state = crate::visitors::get_db_state()?;
+        self.execute_with_executor(db_state.pool()).await
     }
 }

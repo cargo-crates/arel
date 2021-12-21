@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::pin::Pin;
 use once_cell::sync::OnceCell;
 
 // use sqlx::sqlite::{SqlitePool};
@@ -52,11 +53,13 @@ impl DbState {
 }
 
 pub static DB_STATE_CELL: OnceCell<DbState>  = OnceCell::new();
-pub async fn get_or_init_db_state<Fut>(f: impl FnOnce() -> Fut) -> anyhow::Result<&'static DbState>
-    where Fut: Future<Output = Result<AnyPool, sqlx::Error>>
+// pub async fn get_or_init_db_state<Fut>(f: impl FnOnce() -> Fut) -> anyhow::Result<&'static DbState>
+//     where Fut: Future<Output = Result<AnyPool, sqlx::Error>>;
+pub async fn get_or_init_db_state<F>(callback: F) -> anyhow::Result<&'static DbState>
+    where F: FnOnce() -> Pin<Box<dyn Future<Output = Result<AnyPool, sqlx::Error>>>>
 {
     if DB_STATE_CELL.get().is_none() {
-        let pool = f().await?;
+        let pool = callback().await?;
         if let Err(_) = DB_STATE_CELL.set(DbState {
             name: "default",
             pool,

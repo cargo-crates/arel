@@ -28,7 +28,9 @@ struct User {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let db_state = arel::visitors::get_or_init_db_state(|| sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:")).await?;
+    let db_state = arel::visitors::get_or_init_db_state(|| Box::pin(async {
+        sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:").await
+    })).await?;
 
     let sql = User::query()
         .r#where(json!({"name": "Tom"}))

@@ -18,7 +18,10 @@ mod sqlite_sqlx {
     }
 
     async fn init_db() -> anyhow::Result<()> {
-        let db_state = arel::visitors::get_or_init_db_state(|| sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:")).await?;
+        let db_state = arel::visitors::get_or_init_db_state(|| Box::pin(async {
+            sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:").await
+        })).await?;
+
         sqlx::query("CREATE TABLE IF NOT EXISTS users
             (
                 id          INTEGER PRIMARY KEY NOT NULL,

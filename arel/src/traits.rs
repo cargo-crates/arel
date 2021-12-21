@@ -73,15 +73,36 @@ pub trait ArelAble: Sized {
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     fn new_from_db_row(db_row: Row<Self>) -> anyhow::Result<Self>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_one_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<Self> where E: sqlx::Executor<'c, Database=sqlx::Any> {
+        Self::query().fetch_one_with_executor(executor).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn fetch_one() -> anyhow::Result<Self> { Self::query().fetch_one().await }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_first_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<Self> where E: sqlx::Executor<'c, Database=sqlx::Any> {
+        Self::query().fetch_first_with_executor(executor).await
+    }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn fetch_first() -> anyhow::Result<Self> { Self::query().fetch_first().await }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_last_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<Self> where E: sqlx::Executor<'c, Database=sqlx::Any> {
+        Self::query().fetch_last_with_executor(executor).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn fetch_last() -> anyhow::Result<Self> { Self::query().fetch_last().await }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_count_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<i64>
+        where E: sqlx::Executor<'c, Database = sqlx::Any> {
+        Self::query().fetch_count_with_executor(executor).await
+    }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn fetch_count() -> anyhow::Result<i64> { Self::query().fetch_count().await }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn save_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<()> where E: sqlx::Executor<'c, Database=sqlx::Any>;
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn save(&mut self) -> anyhow::Result<()>;
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn delete_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult> where E: sqlx::Executor<'c, Database=sqlx::Any>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn delete(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]

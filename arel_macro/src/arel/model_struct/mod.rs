@@ -121,7 +121,9 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             }
             // async fn save(&mut self) -> arel::anyhow::Result<()>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
-            async fn save(&mut self) -> arel::anyhow::Result<()> {
+            async fn save_with_executor<'c, E>(&mut self, executor: E) -> arel::anyhow::Result<()>
+            where E: arel::sqlx::Executor<'c, Database = arel::sqlx::Any>
+            {
                 // validates
                 self.validate()?;
 
@@ -133,9 +135,9 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                     if let Some(primary_attr_key_value) = primary_attr_key_value {
                         let mut where_clause = arel::serde_json::Map::new();
                         where_clause.insert(primary_key.to_string(), primary_attr_key_value);
-                        Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute().await?;
+                        Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute_with_executor(executor).await?;
                     } else {
-                        let ret = Self::create(json).execute().await?;
+                        let ret = Self::create(json).execute_with_executor(executor).await?;
                         if let std::option::Option::Some(id) = ret.last_insert_id() {
                             self.#primary_attr_key_ident = std::option::Option::Some(id.try_into()?)
                         }
@@ -144,9 +146,15 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 }
                 std::result::Result::Ok(())
             }
+            async fn save(&mut self) -> arel::anyhow::Result<()> {
+                let db_state = arel::visitors::get_db_state()?;
+                self.save_with_executor(db_state.pool()).await
+            }
             // async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
-            async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult> {
+            async fn delete_with_executor<'c, E>(&mut self, executor: E) -> arel::anyhow::Result<arel::sqlx::any::AnyQueryResult>
+            where E: arel::sqlx::Executor<'c, Database = arel::sqlx::Any>
+            {
                 let primary_key = Self::primary_key();
                 let primary_attr_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
                 let primary_attr_key_value = self.persisted_attr_json(primary_attr_key);
@@ -154,12 +162,16 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 if let std::option::Option::Some(primary_attr_key_value) = primary_attr_key_value {
                     let mut where_clause = arel::serde_json::Map::new();
                     where_clause.insert(primary_key.to_string(), primary_attr_key_value);
-                    let ret = Self::delete_all(arel::serde_json::Value::Object(where_clause)).execute().await?;
+                    let ret = Self::delete_all(arel::serde_json::Value::Object(where_clause)).execute_with_executor(executor).await?;
                     self.persisted_row_record = std::option::Option::None;
                     std::result::Result::Ok(ret)
                 } else {
                     return Err(arel::anyhow::anyhow!("Record Is Not Persisted: {:?}", self));
                 }
+            }
+            async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult> {
+                let db_state = arel::visitors::get_db_state()?;
+                self.delete_with_executor(db_state.pool()).await
             }
         }
         // impl User {}

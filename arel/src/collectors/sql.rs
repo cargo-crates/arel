@@ -103,39 +103,31 @@ impl Sql {
         }
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn fetch_one(&self) -> anyhow::Result<sqlx::any::AnyRow> {
-        let db_state = crate::visitors::get_db_state()?;
+    fn get_sqlx_query(&self) -> anyhow::Result<sqlx::query::Query<'_, sqlx::Any, <sqlx::Any as sqlx::database::HasArguments<'_>>::Arguments>> {
         let mut query = sqlx::query(&self.value);
         if let Some(prepare_value) = &self.prepare_value {
             for prepare_item in prepare_value.iter() {
                 query = query.bind(value_sql_string_from_json(prepare_item)?);
             }
         }
-        let row = query.fetch_one(db_state.pool()).await?;
-        Ok(row)
+        Ok(query)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn fetch_all(&self) -> anyhow::Result<Vec<sqlx::any::AnyRow>> {
-        let db_state = crate::visitors::get_db_state()?;
-        let mut query = sqlx::query(&self.value);
-        if let Some(prepare_value) = &self.prepare_value {
-            for prepare_item in prepare_value.iter() {
-                query = query.bind(value_sql_string_from_json(prepare_item)?);
-            }
-        }
-        let rows = query.fetch_all(db_state.pool()).await?;
-        Ok(rows)
+    pub(crate) async fn fetch_one<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyRow>
+    where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        Ok(self.get_sqlx_query()?.fetch_one(executor).await?)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn execute(&self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
-        let db_state = crate::visitors::get_db_state()?;
-        let mut query = sqlx::query(&self.value);
-        if let Some(prepare_value) = &self.prepare_value {
-            for prepare_item in prepare_value.iter() {
-                query = query.bind(value_sql_string_from_json(prepare_item)?);
-            }
-        }
-        let query_result = query.execute(db_state.pool()).await?;
-        Ok(query_result)
+    pub(crate) async fn fetch_all<'c, E>(&self, executor: E) -> anyhow::Result<Vec<sqlx::any::AnyRow>>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        Ok(self.get_sqlx_query()?.fetch_all(executor).await?)
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    pub(crate) async fn execute<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
+        where E: sqlx::Executor<'c, Database = sqlx::Any>
+    {
+        Ok(self.get_sqlx_query()?.execute(executor).await?)
     }
 }
