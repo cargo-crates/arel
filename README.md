@@ -68,6 +68,24 @@ async fn main() -> anyhow::Result<()> {
     let result = user.delete().await?;
     println!("{:?}", result);
 
+    // Transaction Support 
+    User::with_transaction(|tx| Box::pin(async {
+        let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
+        let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+        u1.set_name("tx1".to_string()).save_with_executor(&mut *tx).await?;
+        u2.set_name("tx2".to_string()).save_with_executor(&mut *tx).await?;
+        Ok(())
+    })).await?;
+
+    // With Lock In Transaction Support
+    let mut u1 = User::query().fetch_one().await?;
+    let mut u2 = User::query().fetch_one().await?;
+    u1.clone().with_lock(|tx| Box::pin(async move {
+        u1.set_name("with_lock1".to_string()).save_with_executor(&mut *tx).await?;
+        u2.set_name("with_lock2".to_string()).save_with_executor(&mut *tx).await?;
+        Ok(())
+    })).await?;
+    
     Ok(())
 }
 ```

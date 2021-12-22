@@ -1,3 +1,7 @@
+#[allow(unused_imports)]
+use std::future::Future;
+#[allow(unused_imports)]
+use std::pin::Pin;
 use serde_json::{Value as Json};
 use crate::table::Table;
 #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
@@ -22,7 +26,7 @@ use crate::collectors::row::Row;
 /// assert_eq!(Order::table_name(), "orders");
 /// ```
 #[async_trait::async_trait]
-pub trait ArelAble: Sized {
+pub trait ArelAble: Sized + Send + Sync {
     type PersistedRowRecord;
 
     fn id() -> &'static str { Self::primary_key() }
@@ -96,6 +100,23 @@ pub trait ArelAble: Sized {
         Self::query().fetch_count_with_executor(executor).await
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_self_with_executor<'c, E>(&self, executor: E) -> anyhow::Result<Self> where E: sqlx::Executor<'c, Database=sqlx::Any> {
+        let primary_key = Self::primary_key();
+        let attr_primary_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
+        if let Some(attr_primary_key_json) = self.persisted_attr_json(attr_primary_key) {
+            let mut map = serde_json::Map::new();
+            map.insert(primary_key.to_string(), attr_primary_key_json);
+            Self::query().r#where(serde_json::Value::Object(map)).fetch_one_with_executor(executor).await
+        } else {
+            Err(anyhow::anyhow!("model not persisted"))
+        }
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn fetch_self(&self) -> anyhow::Result<Self> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_self_with_executor(db_state.pool()).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn fetch_count() -> anyhow::Result<i64> { Self::query().fetch_count().await }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn save_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<()> where E: sqlx::Executor<'c, Database=sqlx::Any>;
@@ -106,8 +127,46 @@ pub trait ArelAble: Sized {
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn delete(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    async fn with_transaction() -> anyhow::Result<()> {
+    async fn with_transaction<F: Send>(callback: F) -> anyhow::Result<()>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
+    {
         let db_state = crate::visitors::get_db_state()?;
-        db_state.transaction().await
+        db_state.with_transaction(callback).await
     }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn with_lock<F: Send + 'static>(&self, callback: F) -> anyhow::Result<()>
+        where for<'c>
+              F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
+    {
+        let primary_key = Self::primary_key();
+        let attr_primary_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
+        if let Some(attr_primary_key_json) = self.persisted_attr_json(attr_primary_key) {
+            let mut map = serde_json::Map::new();
+            map.insert(primary_key.to_string(), attr_primary_key_json);
+            Self::with_transaction(|tx| Box::pin(async move {
+                Self::lock().r#where(serde_json::Value::Object(map)).limit(1).execute_with_executor(&mut *tx).await?;
+                callback(&mut *tx).await
+            })).await
+        } else {
+            Err(anyhow::anyhow!("model not persisted"))
+        }
+    }
+    // async fn with_lock<F: Send + 'static>(&self, callback: F) -> anyhow::Result<()>
+    //     where for<'c>
+    //           F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>,
+    //           Self: Send
+    // {
+    //     let primary_key = Self::primary_key();
+    //     let attr_primary_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
+    //     if let Some(attr_primary_key_json) = self.persisted_attr_json(attr_primary_key) {
+    //         let mut map = serde_json::Map::new();
+    //         map.insert(primary_key.to_string(), attr_primary_key_json);
+    //         Self::with_transaction(|tx| Box::pin(async move {
+    //             Self::lock().r#where(serde_json::Value::Object(map)).limit(1).execute_with_executor(&mut *tx).await?;
+    //             callback(&mut *tx).await
+    //         })).await
+    //     } else {
+    //         Err(anyhow::anyhow!("model not persisted"))
+    //     }
+    // }
 }

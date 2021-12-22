@@ -110,6 +110,7 @@ impl Sql {
                 query = query.bind(value_sql_string_from_json(prepare_item)?);
             }
         }
+        // println!("{}", self.to_sql_string()?);
         Ok(query)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]

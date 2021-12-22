@@ -42,12 +42,40 @@ async fn main() -> anyhow::Result<()> {
         println!("ok");
     }
 
-    let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
+    let mut u1 = User::query().fetch_one().await?;
+    u1.clone().with_lock(|tx| Box::pin(async move {
+        u1.set_desc2("with_lock1".to_string());
+        u1.save_with_executor(&mut *tx).await?;
+        Ok(())
+    })).await?;
 
-    let mut user = User::new();
-    user.set_desc2("create desc".to_string())
-        .set_expired_at(expired_at.clone())
-        .save().await?;
+
+    // User::with_transaction(|tx| Box::pin(async {
+    //     let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
+    //     let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+    //     u1.set_desc2("tx1".to_string());
+    //     u2.set_desc2("tx2".to_string());
+    //     u1.save_with_executor(&mut *tx).await?;
+    //     u2.save_with_executor(&mut *tx).await?;
+    //     Ok(())
+    // })).await?;
+    //
+    // let u1 = User::query().fetch_one().await?;
+    // println!("u1: {:?}", u1);
+    // assert_eq!(u1.desc2(), Some(&"tx1".to_string()));
+    // let u2 = User::query().fetch_last().await?;
+    // println!("u2: {:?}", u2);
+    // assert_eq!(u2.desc2(), Some(&"tx2".to_string()));
+
+
+
+    let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
+    println!("{}", expired_at);
+
+    // let mut user = User::new();
+    // user.set_desc2("create desc".to_string())
+    //     .set_expired_at(expired_at.clone())
+    //     .save().await?;
 
     // let count = User::query().where_range("expired_at", ..=expired_at).fetch_count().await?;
     // println!("{}", count);

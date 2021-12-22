@@ -161,6 +161,7 @@ impl<M> Table<M> where M: ArelAble {
         self
     }
     pub fn lock(&mut self) -> &mut Self {
+        #[cfg(not(feature = "sqlite"))]
         if let Some(select_manager) = &mut self.select_manager {
             select_manager.lock(json!("FOR UPDATE"));
         } else {

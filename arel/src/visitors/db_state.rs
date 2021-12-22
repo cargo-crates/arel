@@ -4,7 +4,6 @@ use once_cell::sync::OnceCell;
 
 // use sqlx::sqlite::{SqlitePool};
 use sqlx::any::{AnyPool};
-use crate::visitors::db_transaction::{DbTransaction};
 
 #[derive(Debug)]
 pub struct DbState {
@@ -21,34 +20,22 @@ impl DbState {
     // db_state.exec(async move |db_state: &DbState| {
     //     Ok(())
     // }).await?;
-    pub async fn transaction(&self) -> anyhow::Result<()> {
-
-        let mut transaction = DbTransaction::new(self.pool().begin().await?);
-        transaction.execute().await
-
-
-
-        // f(tx).await
-        // match {
-        //     f(tx).await
-        // } {
-        //     Ok(()) => {
-        //         match tx.commit().await {
-        //             Ok(()) => Ok(()),
-        //             Err(err) => Err(err.into())
-        //         }
-        //     },
-        //     Err(err) => Err(err),
-        // }
-        // match f(&mut tx).await {
-        //     Ok(()) => {
-        //         match tx.commit().await {
-        //             Ok(()) => Ok(()),
-        //             Err(err) => Err(err.into())
-        //         }
-        //     },
-        //     Err(err) => Err(err),
-        // }
+    pub async fn with_transaction<F: Send>(&self, callback: F) -> anyhow::Result<()>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
+    {
+        let mut tx = self.pool().begin().await?;
+        match callback(&mut tx).await {
+            Ok(()) => {
+                match tx.commit().await {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(anyhow::anyhow!(e.to_string()))
+                }
+            },
+            Err(e) => {
+                tx.rollback().await?;
+                Err(e)
+            }
+        }
     }
 }
 

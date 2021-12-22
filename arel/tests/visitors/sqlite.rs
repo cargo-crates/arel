@@ -40,8 +40,71 @@ mod sqlite_sqlx {
         Ok(())
     }
 
+    async fn with_transaction_and_with_lock_test() -> anyhow::Result<()> {
+        // Transaction ok
+        User::with_transaction(|tx| Box::pin(async {
+            let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
+            let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+            u1.set_desc2("tx1".to_string());
+            u2.set_desc2("tx2".to_string());
+            u1.save_with_executor(&mut *tx).await?;
+            u2.save_with_executor(&mut *tx).await?;
+            Ok(())
+        })).await?;
+        let u1 = User::query().fetch_one().await?;
+        assert_eq!(u1.desc2(), Some(&"tx1".to_string()));
+        let u2 = User::query().fetch_last().await?;
+        assert_eq!(u2.desc2(), Some(&"tx2".to_string()));
+
+        assert!(User::with_transaction(|tx| Box::pin(async {
+            let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
+            let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+            u1.set_desc2("err_tx1".to_string());
+            u2.set_desc2("err_tx2".to_string());
+            u1.save_with_executor(&mut *tx).await?;
+            u2.save_with_executor(&mut *tx).await?;
+            Err(anyhow::anyhow!("test rollback"))
+        })).await.is_err());
+        let u1 = User::query().fetch_one().await?;
+        assert_eq!(u1.desc2(), Some(&"tx1".to_string()));
+        let u2 = User::query().fetch_last().await?;
+        assert_eq!(u2.desc2(), Some(&"tx2".to_string()));
+
+        // with_lock ok
+        let mut u1 = User::query().fetch_one().await?;
+        let mut u2 = User::query().fetch_last().await?;
+        u1.fetch_self().await?.with_lock(|tx| Box::pin(async move {
+            u1.set_desc2("with_lock1".to_string()).save_with_executor(&mut *tx).await?;
+            u2.set_desc2("with_lock2".to_string()).save_with_executor(&mut *tx).await?;
+            Ok(())
+        })).await?;
+        let u1 = User::query().fetch_one().await?;
+        assert_eq!(u1.desc2(), Some(&"with_lock1".to_string()));
+        let u2 = User::query().fetch_last().await?;
+        assert_eq!(u2.desc2(), Some(&"with_lock2".to_string()));
+
+        // with_lock rollback
+        let mut u1 = User::query().fetch_one().await?;
+        let mut u2 = User::query().fetch_last().await?;
+        assert!(u1.fetch_self().await?.with_lock(|tx| Box::pin(async move {
+            u1.set_desc2("err_with_lock1".to_string());
+            u2.set_desc2("err_with_lock2".to_string());
+            u1.save_with_executor(&mut *tx).await?;
+            u2.save_with_executor(&mut *tx).await?;
+            Err(anyhow::anyhow!("test lock rollback"))
+        })).await.is_err());
+        let u1 = User::query().fetch_one().await?;
+        assert_eq!(u1.desc2(), Some(&"with_lock1".to_string()));
+        let u2 = User::query().fetch_last().await?;
+        assert_eq!(u2.desc2(), Some(&"with_lock2".to_string()));
+
+        Ok(())
+    }
+
     async fn main_test() -> anyhow::Result<()> {
         init_db().await?;
+
+        with_transaction_and_with_lock_test().await?;
 
         assert_eq!(User::table_column_names(), vec!["id", "desc", "type", "done", "expired_at"]);
         assert_eq!(User::attr_names(), vec!["uid", "desc2", "r#type", "done", "expired_at"]);
