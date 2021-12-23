@@ -43,22 +43,34 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let mut u1 = User::query().fetch_one().await?;
-    u1.clone().with_lock(|tx| Box::pin(async move {
+    let mut u1 = u1.clone().with_lock(|tx| Box::pin(async move {
         u1.set_desc2("with_lock1".to_string());
         u1.save_with_executor(&mut *tx).await?;
-        Ok(())
-    })).await?;
+        Ok(Some(u1))
+    })).await?.unwrap();
+    println!("{:?}", u1);
 
+    let tx = User::transaction_start().await?;
+    let u1 = User::transaction_auto_commit(|tx| Box::pin(async move {
+        u1.lock_self_with_executor(tx).await?;
+        u1.set_desc2("with_lock1".to_string());
+        u1.save_with_executor(&mut *tx).await?;
+        Ok(Some(u1))
+    }), tx).await?.unwrap();
+    println!("{:?}", u1);
 
-    // User::with_transaction(|tx| Box::pin(async {
-    //     let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
-    //     let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
-    //     u1.set_desc2("tx1".to_string());
-    //     u2.set_desc2("tx2".to_string());
-    //     u1.save_with_executor(&mut *tx).await?;
-    //     u2.save_with_executor(&mut *tx).await?;
-    //     Ok(())
-    // })).await?;
+    let mut u1 = User::query().fetch_one().await?;
+    let u1 = User::with_transaction(|tx| Box::pin(async move {
+        u1.lock_self_with_executor(tx).await?;
+        let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+        u1.set_desc2("tx1".to_string());
+        u2.set_desc2("tx2".to_string());
+        u1.save_with_executor(&mut *tx).await?;
+        u2.save_with_executor(&mut *tx).await?;
+        Ok(Some(u1))
+    })).await?.unwrap();
+    println!("{:?}", u1);
+
     //
     // let u1 = User::query().fetch_one().await?;
     // println!("u1: {:?}", u1);

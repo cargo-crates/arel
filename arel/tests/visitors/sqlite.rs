@@ -42,15 +42,16 @@ mod sqlite_sqlx {
 
     async fn with_transaction_and_with_lock_test() -> anyhow::Result<()> {
         // Transaction ok
-        User::with_transaction(|tx| Box::pin(async {
+        let u1 = User::with_transaction(|tx| Box::pin(async {
             let mut u1 = User::query().fetch_one_with_executor(&mut *tx).await?;
             let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
             u1.set_desc2("tx1".to_string());
             u2.set_desc2("tx2".to_string());
             u1.save_with_executor(&mut *tx).await?;
             u2.save_with_executor(&mut *tx).await?;
-            Ok(())
-        })).await?;
+            Ok(Some(u1))
+        })).await?.unwrap();
+        assert_eq!(u1.desc2(), Some(&"tx1".to_string()));
         let u1 = User::query().fetch_one().await?;
         assert_eq!(u1.desc2(), Some(&"tx1".to_string()));
         let u2 = User::query().fetch_last().await?;
@@ -73,11 +74,12 @@ mod sqlite_sqlx {
         // with_lock ok
         let mut u1 = User::query().fetch_one().await?;
         let mut u2 = User::query().fetch_last().await?;
-        u1.fetch_self().await?.with_lock(|tx| Box::pin(async move {
+        let u1 = u1.fetch_self().await?.with_lock(|tx| Box::pin(async move {
             u1.set_desc2("with_lock1".to_string()).save_with_executor(&mut *tx).await?;
             u2.set_desc2("with_lock2".to_string()).save_with_executor(&mut *tx).await?;
-            Ok(())
-        })).await?;
+            Ok(Some(u1))
+        })).await?.unwrap();
+        assert_eq!(u1.desc2(), Some(&"with_lock1".to_string()));
         let u1 = User::query().fetch_one().await?;
         assert_eq!(u1.desc2(), Some(&"with_lock1".to_string()));
         let u2 = User::query().fetch_last().await?;

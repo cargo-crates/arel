@@ -13,21 +13,13 @@ pub struct DbState {
 }
 
 impl DbState {
-    pub fn pool(&self) -> &AnyPool {
-        &self.pool
-    }
-    // eg:
-    // db_state.exec(async move |db_state: &DbState| {
-    //     Ok(())
-    // }).await?;
-    pub async fn with_transaction<F: Send>(&self, callback: F) -> anyhow::Result<()>
-        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
+    pub async fn transaction_auto_commit<T: crate::ArelAble, F: Send>(callback: F, mut tx: sqlx::Transaction<'static, sqlx::Any>) -> anyhow::Result<Option<T>>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<Option<T>>> + Send + 'c >>
     {
-        let mut tx = self.pool().begin().await?;
         match callback(&mut tx).await {
-            Ok(()) => {
+            Ok(model) => {
                 match tx.commit().await {
-                    Ok(_) => Ok(()),
+                    Ok(_) => Ok(model),
                     Err(e) => Err(anyhow::anyhow!(e.to_string()))
                 }
             },
@@ -36,6 +28,18 @@ impl DbState {
                 Err(e)
             }
         }
+    }
+    pub fn pool(&self) -> &AnyPool {
+        &self.pool
+    }
+    // eg:
+    // db_state.exec(async move |db_state: &DbState| {
+    //     Ok(())
+    // }).await?;
+    pub async fn with_transaction<T: crate::ArelAble, F: Send>(&self, callback: F) -> anyhow::Result<Option<T>>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<Option<T>>> + Send + 'c >>
+    {
+        Self::transaction_auto_commit(callback, self.pool().begin().await?).await
     }
 }
 

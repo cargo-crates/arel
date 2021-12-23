@@ -23,6 +23,8 @@ struct User {
     name: String,
     #[arel(table_column_name="type")]
     r#type: Option<i32>,
+    #[arel(table_column_name="desc")]
+    desc2: String,
     expired_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -74,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
         let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
         u1.set_name("tx1".to_string()).save_with_executor(&mut *tx).await?;
         u2.set_name("tx2".to_string()).save_with_executor(&mut *tx).await?;
-        Ok(())
+        Ok(None)
     })).await?;
 
     // With Lock In Transaction Support
@@ -83,7 +85,7 @@ async fn main() -> anyhow::Result<()> {
     u1.clone().with_lock(|tx| Box::pin(async move {
         u1.set_name("with_lock1".to_string()).save_with_executor(&mut *tx).await?;
         u2.set_name("with_lock2".to_string()).save_with_executor(&mut *tx).await?;
-        Ok(())
+        Ok(None)
     })).await?;
     
     Ok(())
@@ -245,4 +247,40 @@ let sql = User::delete_all(json!({
             "age": 18,
         })).order(json!("id desc")).offset(1).limit(5).to_sql_string().unwrap();
 assert_eq!(sql, "DELETE FROM `users` WHERE `users`.`age` = 18 AND `users`.`name` = 'Tom' ORDER BY id desc LIMIT 5 OFFSET 1");
+```
+
+---
+
+### Transaction
+
+```rust
+let mut u1 = User::query().fetch_one().await?;
+// if u1 should move to closure, please use with_transaction replaced, (prevent clone u1)
+let mut u1 = u1.clone().with_lock(|tx| Box::pin(async move {
+    u1.set_desc2("with_lock1".to_string());
+    u1.save_with_executor(&mut *tx).await?;
+    Ok(Some(u1))
+})).await?.unwrap();
+println!("{:?}", u1);
+
+let tx = User::transaction_start().await?;
+let u1 = User::transaction_auto_commit(|tx| Box::pin(async move {
+    u1.lock_self_with_executor(tx).await?;
+    u1.set_desc2("with_lock1".to_string());
+    u1.save_with_executor(&mut *tx).await?;
+    Ok(Some(u1))
+}), tx).await?.unwrap();
+println!("{:?}", u1);
+
+let mut u1 = User::query().fetch_one().await?;
+let u1 = User::with_transaction(|tx| Box::pin(async move {
+    u1.lock_self_with_executor(tx).await?;
+    let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+    u1.set_desc2("tx1".to_string());
+    u2.set_desc2("tx2".to_string());
+    u1.save_with_executor(&mut *tx).await?;
+    u2.save_with_executor(&mut *tx).await?;
+    Ok(Some(u1))
+})).await?.unwrap();
+println!("{:?}", u1);
 ```

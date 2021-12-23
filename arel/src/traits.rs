@@ -27,7 +27,7 @@ use crate::collectors::row::Row;
 /// ```
 #[async_trait::async_trait]
 pub trait ArelAble: Sized + Send + Sync {
-    type PersistedRowRecord;
+    // type PersistedRowRecord;
 
     fn id() -> &'static str { Self::primary_key() }
     fn primary_key() -> &'static str { "id" }
@@ -71,8 +71,9 @@ pub trait ArelAble: Sized + Send + Sync {
     // validates
     fn validate(&self) -> anyhow::Result<()>;
 
-    // sqlx
-    fn persisted_row_record(&self) -> Option<&Self::PersistedRowRecord>;
+    // === sqlx
+    // provide in instance method
+    // fn persisted_row_record(&self) -> Option<&Self::PersistedRowRecord>;
     fn attr_json(&self, attr: &str) -> Option<Json>;
     fn persisted_attr_json(&self, attr: &str) -> Option<Json>;
     fn changed_attrs_json(&self) -> anyhow::Result<Option<Json>>;
@@ -131,29 +132,45 @@ pub trait ArelAble: Sized + Send + Sync {
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
     async fn delete(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult>;
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    async fn with_transaction<F: Send>(callback: F) -> anyhow::Result<()>
-        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
-    {
+    async fn transaction_start() -> anyhow::Result<sqlx::Transaction<'static, sqlx::Any>> {
         let db_state = crate::visitors::get_db_state()?;
-        db_state.with_transaction(callback).await
+        Ok(db_state.pool().begin().await?)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    async fn with_lock<F: Send + 'static>(&self, callback: F) -> anyhow::Result<()>
-        where for<'c>
-              F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'c >>
+    async fn transaction_auto_commit<F: Send>(callback: F, tx: sqlx::Transaction<'static, sqlx::Any>) -> anyhow::Result<Option<Self>>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<Option<Self>>> + Send + 'c >> {
+        crate::visitors::db_state::DbState::transaction_auto_commit::<Self, _>(callback, tx).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn with_transaction<F: Send>(callback: F) -> anyhow::Result<Option<Self>>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<Option<Self>>> + Send + 'c >>
     {
+        let db_state = crate::visitors::get_db_state()?;
+        db_state.with_transaction::<Self, _>(callback).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn lock_self_with_executor(&self, executor: &mut sqlx::Transaction<sqlx::Any>) -> anyhow::Result<()> {
         let primary_key = Self::primary_key();
         let attr_primary_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
         if let Some(attr_primary_key_json) = self.persisted_attr_json(attr_primary_key) {
             let mut map = serde_json::Map::new();
             map.insert(primary_key.to_string(), attr_primary_key_json);
-            Self::with_transaction(|tx| Box::pin(async move {
-                Self::lock().r#where(serde_json::Value::Object(map)).limit(1).execute_with_executor(&mut *tx).await?;
-                callback(&mut *tx).await
-            })).await
-        } else {
+            Self::lock().r#where(serde_json::Value::Object(map)).limit(1).execute_with_executor(executor).await?;
+            Ok(())
+        }  else {
             Err(anyhow::anyhow!("model not persisted"))
         }
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    async fn with_lock<F: Send>(&self, callback: F) -> anyhow::Result<Option<Self>>
+        where for<'c> F: FnOnce(&'c mut sqlx::Transaction<sqlx::Any>) -> Pin<Box<dyn Future<Output = anyhow::Result<Option<Self>>> + Send + 'c >>
+    {
+        let mut tx = Self::transaction_start().await?;
+        if let Err(e) = self.lock_self_with_executor(&mut tx).await {
+            tx.rollback().await?;
+            return Err(e)
+        }
+        Self::transaction_auto_commit(callback, tx).await
     }
     // async fn with_lock<F: Send + 'static>(&self, callback: F) -> anyhow::Result<()>
     //     where for<'c>

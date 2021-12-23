@@ -67,18 +67,10 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
         // impl ArelAble for User {}
         #[arel::async_trait::async_trait]
         impl #impl_generics arel::ArelAble for #arel_struct_ident #type_generics #where_clause {
-            type PersistedRowRecord = #arel_struct_row_record_ident #type_generics;
+            // type PersistedRowRecord = #arel_struct_row_record_ident #type_generics;
             #builder_impl_arel_functions_def
             // validates
             #builder_functions_def_of_validates
-            // fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord>
-            fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord> {
-                if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
-                    std::option::Option::Some(persisted_row_record)
-                } else {
-                    std::option::Option::None
-                }
-            }
             // fn new_from_db_row(db_row: arel::collectors::row::Row) -> arel::anyhow::Result<Self>
             // #[cfg(any(feature = "arel/sqlite", feature = "arel/mysql", feature = "arel/postgres", feature = "arel/mssql"))]
             fn new_from_db_row(db_row: arel::collectors::row::Row<Self>) -> arel::anyhow::Result<Self #type_generics> {
@@ -189,6 +181,14 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             #builder_functions_def_of_setters
             // #builder_functions_def_of_validates
             // #builder_functions_def
+            // fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord>
+            fn persisted_row_record(&self) -> std::option::Option<&#arel_struct_row_record_ident #type_generics> {
+                if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
+                    std::option::Option::Some(persisted_row_record)
+                } else {
+                    std::option::Option::None
+                }
+            }
         }
     })
 }
