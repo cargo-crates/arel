@@ -69,6 +69,8 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
         impl #impl_generics arel::ArelAble for #arel_struct_ident #type_generics #where_clause {
             type PersistedRowRecord = #arel_struct_row_record_ident #type_generics;
             #builder_impl_arel_functions_def
+            // validates
+            #builder_functions_def_of_validates
             // fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord>
             fn persisted_row_record(&self) -> std::option::Option<&Self::PersistedRowRecord> {
                 if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
@@ -185,7 +187,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             }
             #builder_functions_def_of_getters
             #builder_functions_def_of_setters
-            #builder_functions_def_of_validates
+            // #builder_functions_def_of_validates
             // #builder_functions_def
         }
     })

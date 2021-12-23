@@ -156,6 +156,8 @@ mod sqlite_sqlx {
 
         // create
         let mut user = User::new();
+        // validates
+        assert!(user.save().await.is_err());
         user.set_desc2("create desc".to_string())
             .set_expired_at(expired_at.clone())
             .save().await?;

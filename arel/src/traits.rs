@@ -67,6 +67,10 @@ pub trait ArelAble: Sized + Send + Sync {
     fn attr_names() -> Vec<&'static str>;
     fn attr_name_to_table_column_name<'a>(attr_name: &'a str) -> anyhow::Result<&'a str>;
     fn table_column_name_to_attr_name<'a>(table_column_name: &'a str) -> anyhow::Result<&'a str>;
+
+    // validates
+    fn validate(&self) -> anyhow::Result<()>;
+
     // sqlx
     fn persisted_row_record(&self) -> Option<&Self::PersistedRowRecord>;
     fn attr_json(&self, attr: &str) -> Option<Json>;

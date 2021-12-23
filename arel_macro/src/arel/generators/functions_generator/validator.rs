@@ -17,7 +17,7 @@ pub fn generate_struct_functions_define_of_validates(derive_input_helper: &Deriv
                 }
         }).collect();
         let validations_token_stream = quote::quote! {
-            pub fn validate(&self) -> arel::anyhow::Result<()> {
+            fn validate(&self) -> arel::anyhow::Result<()> {
                 #(#segments)*
                 std::result::Result::Ok(())
             }
