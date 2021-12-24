@@ -243,6 +243,7 @@ pub fn help_range_to_sql<T: serde::Serialize>(table_column_name: &str, range: im
 }
 
 #[cfg(test)]
+#[cfg(feature = "mysql")]
 mod tests {
     use crate as arel;
     use arel::prelude::*;

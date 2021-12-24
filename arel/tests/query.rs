@@ -1,15 +1,14 @@
-use arel::prelude::*;
-use chrono::prelude::*;
-
-#[arel]
-struct User {
-    id: i64,
-}
-
-#[allow(dead_code)]
+#[cfg(feature = "mysql")]
 #[cfg(test)]
 mod query {
-    use super::*;
+    use arel::prelude::*;
+    use chrono::prelude::*;
+
+    #[arel]
+    struct User {
+        id: i64,
+    }
+
     #[test]
     fn test_select() {
         let sql = User::query().to_sql_string().unwrap();

@@ -61,6 +61,7 @@ impl<M> Group<M> where M: ArelAble {
 }
 
 #[cfg(test)]
+#[cfg(feature = "mysql")]
 mod tests {
     use crate as arel;
     use arel::prelude::*;

@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
@@ -20,5 +20,9 @@ jobs:
       run: cargo build --features mysql --verbose
     - name: Run tests with mysql features
       run: cargo test -p arel --features mysql --verbose
-    - name: Run sqlx tests with sqlite features
-      run: cargo test sqlx -p arel --features sqlite --verbose
+    - name: Run tests with sqlite features
+      run: cargo test -p arel --features sqlite --verbose -- --skip sqlite_sqlx
+    - name: Run sqlx default tests with sqlite features
+      run: cargo test sqlite_sqlx_default -p arel --features sqlite --verbose
+    - name: Run sqlx default tests with sqlite features
+      run: cargo test sqlite_sqlx_association -p arel --features sqlite --verbose

@@ -12,6 +12,7 @@ pub fn to_sql_string<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> any
 }
 
 #[cfg(test)]
+#[cfg(feature = "mysql")]
 mod tests {
     use crate as arel;
     use arel::prelude::*;

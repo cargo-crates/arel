@@ -1,14 +1,14 @@
 mod persisted_record_struct;
 
-use crate::arel::generators::{fields_generator, functions_generator};
+use crate::arel::generators::{fields_generator, functions_generator, associations_generator};
 use expansion::helpers::{self, DeriveInputHelper};
 use syn::{AttributeArgs, spanned::Spanned};
 // use syn::{parse_quote};
 
 pub fn generate(derive_input_helper: &DeriveInputHelper, args: &AttributeArgs) -> syn::Result<proc_macro2::TokenStream> {
     let mut final_token_stream = proc_macro2::TokenStream::new();
-    final_token_stream.extend(persisted_record_struct::generate(derive_input_helper, args));
-    final_token_stream.extend(generate_struct(derive_input_helper, args));
+    final_token_stream.extend(persisted_record_struct::generate(derive_input_helper, args)?);
+    final_token_stream.extend(generate_struct(derive_input_helper, args)?);
     Ok(final_token_stream)
 }
 
@@ -30,6 +30,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
     let builder_functions_def_of_getters = functions_generator::accessor::generate_struct_functions_define_of_getters(derive_input_helper)?;
     let builder_functions_def_of_setters = functions_generator::accessor::generate_struct_functions_define_of_setters(derive_input_helper)?;
     let builder_functions_def_of_validates = functions_generator::validator::generate_struct_functions_define_of_validates(derive_input_helper)?;
+    let builder_functions_def_of_associations = associations_generator::generate_associations(derive_input_helper, args)?;
     // let builder_functions_def = functions_generator::generate_struct_functions_define(derive_input_helper)?;
     let builder_impl_arel_functions_def = functions_generator::generate_struct_impl_arel_functions_define(derive_input_helper, args)?;
 
@@ -177,6 +178,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                     #builder_fields_init_clauses
                 }
             }
+            #builder_functions_def_of_associations
             #builder_functions_def_of_getters
             #builder_functions_def_of_setters
             // #builder_functions_def_of_validates

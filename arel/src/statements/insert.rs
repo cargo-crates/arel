@@ -27,7 +27,14 @@ impl<M> StatementAble<M> for Insert<M> where M: ArelAble {
                         let json_value = json_object.get(column_name).unwrap();
                         values.push(Self::value_sql_string_from_json(json_value)?);
                     }
-                    vec.push(Sql::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
+                    if keys.len() > 0  && values.len() > 0 {
+                        vec.push(Sql::new(format!("{} ({}) VALUES ({})", methods::quote_table_name(&M::table_name()), keys.join(", "), values.join(", "))));
+                    } else {
+                        #[cfg(feature = "sqlite")]
+                        vec.push(Sql::new(format!("{} DEFAULT VALUES", methods::quote_table_name(&M::table_name()))));
+                        #[cfg(not(feature = "sqlite"))]
+                        vec.push(Sql::new(format!("{} VALUES ()", methods::quote_table_name(&M::table_name()))));
+                    }
                 },
                 _ => return Err(anyhow::anyhow!("Error: {:?} Not Support", self.json_value()))
             }
@@ -51,6 +58,7 @@ impl<M> Insert<M> where M: ArelAble {
 
 
 // #[cfg(test)]
+// #[cfg(feature = "mysql")]
 // mod tests {
 //     use super::*;
 //     // use serde_json::{json};
