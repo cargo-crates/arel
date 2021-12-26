@@ -413,3 +413,9 @@ impl<M> Table<M> where M: ArelAble {
         self.execute_with_executor(db_state.pool()).await
     }
 }
+
+impl<M: ArelAble> From<Table<M>> for String {
+    fn from(mut table: Table<M>) -> Self {
+        table.to_sql_string().unwrap()
+    }
+}

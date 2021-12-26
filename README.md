@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
         sqlx::any::AnyPoolOptions::new().max_connections(5).connect("sqlite::memory:").await
     })).await?;
 
-    let sql = User::query()
+    let sql: String = User::query()
         .r#where(json!({"name": "Tom"}))
         .r#where(json!(["active = ?", true]))
         .where_not(json!({"status": [1, 2, 3]}))
@@ -42,8 +42,7 @@ async fn main() -> anyhow::Result<()> {
         .where_between(json!({"age": [18, 35]}))
         .where_range("expired_at", ..=chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59))
         .distinct()
-        .to_sql_string()
-        .unwrap();
+        .into();
     assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users` WHERE `users`.`name` = 'Tom' AND active = 1 AND `users`.`status` NOT IN (1, 2, 3) AND (`users`.`login` = 0 OR `users`.`phone` IS NULL) AND `users`.`age` BETWEEN 18 AND 35 AND `users`.`expired_at` <= '2021-12-31T23:59:59Z'");
 
     // query batch vec<User>

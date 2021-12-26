@@ -11,7 +11,7 @@ mod query {
 
     #[test]
     fn test_select() {
-        let sql = User::query().to_sql_string().unwrap();
+        let sql: String = User::query().into();
         assert_eq!(sql, "SELECT `users`.* FROM `users`");
         let sql = User::query().distinct().to_sql_string().unwrap();
         assert_eq!(sql, "SELECT DISTINCT `users`.* FROM `users`");

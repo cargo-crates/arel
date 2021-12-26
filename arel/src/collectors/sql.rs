@@ -147,3 +147,9 @@ impl Sql {
         self.execute_with_executor(db_state.pool()).await
     }
 }
+
+impl From<Sql> for String {
+    fn from(sql: Sql) -> Self {
+        sql.to_sql_string().unwrap()
+    }
+}
