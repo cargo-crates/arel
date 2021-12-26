@@ -2,6 +2,22 @@ use expansion::helpers::{self, DeriveInputHelper};
 #[allow(unused_imports)]
 use syn::{AttributeArgs, spanned::Spanned};
 
+pub fn get_has_and_belongs_to_many_args_vec(derive_input_helper: &DeriveInputHelper, args: &AttributeArgs) -> syn::Result<Option<Vec<Vec<syn::NestedMeta>>>> {
+    let mut total_vec = vec![];
+    let metas = helpers::parse_attrs_to_metas(&derive_input_helper.value().attrs)?;
+    if let Some(mut vec) = helpers::get_namespace_nested_metas_vec_from_metas(metas.iter().collect::<Vec<_>>(), vec!["has_and_belongs_to_many"])? {
+        total_vec.append(&mut vec)
+    }
+    if let Some(mut vec) = helpers::get_namespace_nested_metas_vec_from_nested_metas(args.iter().collect(), vec!["has_and_belongs_to_many"])? {
+        total_vec.append(&mut vec)
+    }
+    if total_vec.len() > 0 {
+        Ok(Some(total_vec.into_iter().map(|i| i.into_iter().map(|i| i.clone()).collect::<Vec<_>>()).collect::<Vec<_>>()))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn handle_association_attributes(has_and_belongs_to_args: Vec<&syn::NestedMeta>, derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) -> syn::Result<Option<(syn::Ident, syn::Ident, syn::Ident, syn::Ident, syn::Ident)>> {
     let self_struct_ident = &derive_input_helper.value().ident;
     let self_struct_name = format!("{}", self_struct_ident.to_string());
@@ -45,9 +61,9 @@ pub fn handle_association_attributes(has_and_belongs_to_args: Vec<&syn::NestedMe
 pub fn generate_has_and_belongs_to_many_associations(derive_input_helper: &DeriveInputHelper, args: &AttributeArgs) -> syn::Result<proc_macro2::TokenStream> {
     let mut final_token_stream = proc_macro2::TokenStream::new();
 
-    if let Some(has_and_belongs_to_many_args_vec) = helpers::get_namespace_nested_metas_vec(args.iter().collect(), vec!["has_and_belongs_to_many"])? {
+    if let Some(has_and_belongs_to_many_args_vec) = get_has_and_belongs_to_many_args_vec(derive_input_helper, args)? {
         for has_and_belongs_to_args in has_and_belongs_to_many_args_vec.into_iter() {
-            if let Some((association_ident, has_many_struct_ident, foreign_key_ident, association_foreign_key_ident, join_table_ident)) = handle_association_attributes(has_and_belongs_to_args, derive_input_helper, args)? {
+            if let Some((association_ident, has_many_struct_ident, foreign_key_ident, association_foreign_key_ident, join_table_ident)) = handle_association_attributes(has_and_belongs_to_args.iter().collect(), derive_input_helper, args)? {
                 final_token_stream.extend(quote::quote! {
                     pub fn #association_ident(&self) -> arel::anyhow::Result<arel::table::Table<#has_many_struct_ident>> {
                         let assocation_table_name = #has_many_struct_ident::table_name();

@@ -1,9 +1,8 @@
 use arel::prelude::*;
 
-#[arel(
-has_and_belongs_to_many("users", struct = "User", join_table = "admins_users", foreign_key = "admin_id", association_foreign_key = "user_id"),
-has_many("avatar_sources", struct = "AvatarSource", through = "users"),
-)]
+#[arel]
+#[has_and_belongs_to_many("users", struct = "User", join_table = "admins_users", foreign_key = "admin_id", association_foreign_key = "user_id")]
+#[has_many("avatar_sources", struct = "AvatarSource", through = "users")]
 struct Admin {
     #[arel(table_column_name="id")]
     id: Option<i64>,
@@ -29,10 +28,9 @@ struct User {
     parent_id: Option<i64>,
 }
 
-#[arel(
-    belongs_to("user", struct = "User", foreign_key = "user_id"),
-    has_many("order_shops", struct = "OrderShop"),
-)]
+#[arel]
+#[belongs_to("user", struct = "User", foreign_key = "user_id")]
+#[has_many("order_shops", struct = "OrderShop")]
 struct Order {
     id: Option<i32>,
     user_id: Option<i32>,
@@ -49,7 +47,8 @@ struct OrderShop {
 }
 
 // foreign_key => default: OrderShopProduct => order_shop_product_id in order_shop_product_snapshots
-#[arel(has_one("order_shop_snapshot", struct = "OrderShopProductSnapshot"))]
+#[arel]
+#[has_one("order_shop_snapshot", struct = "OrderShopProductSnapshot")]
 struct OrderShopProduct {
     id: Option<i32>,
     order_shop_id: Option<i32>,
