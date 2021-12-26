@@ -351,7 +351,7 @@ impl<M> Table<M> where M: ArelAble {
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         let sql = self.to_sql()?;
-        let sqlx_row = sql.fetch_one(executor).await?;
+        let sqlx_row = sql.fetch_one_with_executor(executor).await?;
         Ok(M::new_from_db_row(Row::<M>::new(sqlx_row))?)
     }
     pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
@@ -382,7 +382,7 @@ impl<M> Table<M> where M: ArelAble {
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         let sql = self.to_sql()?;
-        let sqlx_rows = sql.fetch_all(executor).await?;
+        let sqlx_rows = sql.fetch_all_with_executor(executor).await?;
         sqlx_rows.into_iter().map(|sqlx_row| M::new_from_db_row(Row::<M>::new(sqlx_row))).collect()
     }
     pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
@@ -392,7 +392,7 @@ impl<M> Table<M> where M: ArelAble {
     pub async fn fetch_count_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<i64>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
-        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one(executor).await?;
+        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one_with_executor(executor).await?;
         let row = Row::<M>::new(sqlx_row);
         match row.get_column_value_i64(row.column_names().get(0).ok_or(anyhow::anyhow!("Column is Blank"))?) {
             Ok(count) => Ok(count),
@@ -406,7 +406,7 @@ impl<M> Table<M> where M: ArelAble {
     pub async fn execute_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
-        self.to_sql()?.execute(executor).await
+        self.to_sql()?.execute_with_executor(executor).await
     }
     pub async fn execute(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
         let db_state = crate::visitors::get_db_state()?;
