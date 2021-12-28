@@ -72,12 +72,33 @@ pub fn generate_struct_impl_arel_functions_define(derive_input_helper: &DeriveIn
         }
     }
     // locking_column
+    // fn set_locking_column_value(_locking_version: i32)
     {
         if let Some(ident) = helpers::get_macro_nested_attr_value_ident(args.iter().collect(), "locking_column", None, Some(arg_allow_attrs.clone()))? {
             // if let Some(table_name_ident) = get_struct_attr(args, "table_name")? {
             let token_stream = quote::quote! {
-                fn locking_column() -> &'static str {
-                    stringify!(#ident)
+                fn locking_column() -> std::option::Option<&'static str> {
+                    std::option::Option::Some(stringify!(#ident))
+                }
+            };
+            final_token_stream.extend(token_stream);
+            // fn set_locking_column_attr_value(_locking_version: i32)
+            let token_stream = quote::quote! {
+                fn set_locking_column_attr_value(&mut self, locking_version: i32) -> arel::anyhow::Result<()> {
+                    self.#ident = std::option::Option::Some(locking_version.try_into()?);
+                    Ok(())
+                }
+            };
+            final_token_stream.extend(token_stream);
+            // get_persisted_locking_column_attr_value(&self)
+            let token_stream = quote::quote! {
+                fn get_persisted_locking_column_attr_value(&self) -> arel::anyhow::Result<std::option::Option<i32>> {
+                    if let std::option::Option::Some(persisted_row_record) = &self.persisted_row_record {
+                        if let std::option::Option::Some(locking_version) = persisted_row_record.#ident {
+                            return std::result::Result::Ok(std::option::Option::Some(locking_version.try_into()?))
+                        }
+                    }
+                    return std::result::Result::Ok(std::option::Option::None)
                 }
             };
             final_token_stream.extend(token_stream);

@@ -31,7 +31,13 @@ pub trait ArelAble: Sized + Send + Sync {
 
     fn id() -> &'static str { Self::primary_key() }
     fn primary_key() -> &'static str { "id" }
-    fn locking_column() -> &'static str { "lock_version" }
+    fn locking_column() -> Option<&'static str> { None }
+    fn get_persisted_locking_column_attr_value(&self) -> anyhow::Result<Option<i32>> {
+        Err(anyhow::anyhow!("locking_version not support"))
+    }
+    fn set_locking_column_attr_value(&mut self, _locking_version: i32) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!("locking_version not support"))
+    }
     fn table_name() -> String {
         Table::<Self>::table_name()
     }

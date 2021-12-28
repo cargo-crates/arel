@@ -1,7 +1,7 @@
 use arel::prelude::*;
 use chrono::{TimeZone};
 
-#[arel(primary_key="id")]
+#[arel(primary_key="id", locking_column="lock_version")]
 struct User {
     #[arel(table_column_name="id")]
     uid: Option<i64>,
@@ -9,6 +9,7 @@ struct User {
     desc2: String,
     #[arel(table_column_name="type")]
     r#type: Option<i32>,
+    lock_version: Option<i32>,
     done: Option<bool>,
     expired_at: chrono::DateTime<chrono::Utc>,
 }
@@ -23,13 +24,14 @@ async fn init_db() -> anyhow::Result<()> {
                 id          INTEGER PRIMARY KEY NOT NULL,
                 desc TEXT                NOT NULL,
                 done        BOOLEAN             NOT NULL DEFAULT 0,
+                lock_version   INT(11) NOT NULL DEFAULT 0,
                 expired_at   DATETIME NOT NULL
             );"
     ).execute(db_state.pool()).await?;
     for i in 0..10 {
         sqlx::query(&User::create(json!({
                 "desc": format!("test-{}", i),
-                "expired_at": "2021-01-01 00:00:00"
+                "expired_at": "2021-01-01 00:00:00",
             })).to_sql_string()?).execute(db_state.pool()).await?;
     }
 
@@ -104,8 +106,8 @@ async fn main_test() -> anyhow::Result<()> {
 
     with_transaction_and_with_lock_test().await?;
 
-    assert_eq!(User::table_column_names(), vec!["id", "desc", "type", "done", "expired_at"]);
-    assert_eq!(User::attr_names(), vec!["uid", "desc2", "r#type", "done", "expired_at"]);
+    assert_eq!(User::table_column_names(), vec!["id", "desc", "type", "lock_version", "done", "expired_at"]);
+    assert_eq!(User::attr_names(), vec!["uid", "desc2", "r#type", "lock_version", "done", "expired_at"]);
     assert_eq!(User::attr_name_to_table_column_name("uid")?, "id");
     assert_eq!(User::attr_name_to_table_column_name("desc2")?, "desc");
     assert_eq!(User::attr_name_to_table_column_name("r#type")?, "type");
@@ -149,6 +151,13 @@ async fn main_test() -> anyhow::Result<()> {
     assert_eq!(user.desc2(), Some(&"custom desc".to_string()));
     let user = User::query().fetch_one().await?;
     assert_eq!(user.desc2(), Some(&"custom desc".to_string()));
+    // locking_column
+    let mut u1 = User::query().fetch_one().await?;
+    let mut u2 = User::query().fetch_one().await?;
+    assert!(u1.set_desc2("custom desc".to_string()).save().await.is_ok());
+    // u2.set_desc2("custom desc".to_string()).save().await?; // print locking_column error message
+    assert!(u2.set_desc2("custom desc".to_string()).save().await.is_err());
+
 
     let expired_at = chrono::Utc.ymd(2021, 12, 31).and_hms(23, 59, 59);
 
