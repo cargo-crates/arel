@@ -22,7 +22,7 @@ jobs:
       run: cargo test -p arel --features mysql --verbose
     - name: Run tests with sqlite features
       run: cargo test -p arel --features sqlite --verbose -- --skip sqlite_sqlx
-    - name: Run sqlx default tests with sqlite features
+    - name: Run sqlx sqlite_sqlx_default tests with sqlite features
       run: cargo test sqlite_sqlx_default -p arel --features sqlite --verbose
-    - name: Run sqlx default tests with sqlite features
+    - name: Run sqlx sqlite_sqlx_association tests with sqlite features
       run: cargo test sqlite_sqlx_association -p arel --features sqlite --verbose

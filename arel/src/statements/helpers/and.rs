@@ -26,8 +26,8 @@ mod tests {
         }
 
         let wheres = vec![
-            Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
-            Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),
+            Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false, false)),
+            Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false, false)),
         ];
         assert_eq!(super::to_sql_string(&wheres).unwrap(), "`users`.`profile` IS NULL AND name = 'Tom'");
     }
