@@ -1,16 +1,34 @@
 use arel::prelude::*;
 use chrono::{TimeZone};
 
-#[arel(primary_key="id")]
+#[arel(
+    primary_key="id",
+    has_and_belongs_to_many("roles", struct = "Role", join_table = "users_roles", foreign_key = "user_id", association_foreign_key = "role_id"),
+    has_many("role_admins", struct = "RoleAdmin", through = "roles"),
+)]
 struct User {
     #[arel(table_column_name="id")]
     uid: Option<i64>,
+    admin_id: Option<i64>,
     #[arel(table_column_name="desc")]
     desc2: String,
     done: Option<bool>,
     #[arel(table_column_name="type")]
     r#type: Option<i32>,
     expired_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[arel(
+has_many("role_admins", struct = "RoleAdmin")
+)]
+struct Role {
+    id: Option<i32>,
+}
+
+#[arel]
+struct RoleAdmin {
+    id: Option<i32>,
+    role_id: Option<i32>,
 }
 
 async fn init_db() -> anyhow::Result<()> {
@@ -22,7 +40,8 @@ async fn init_db() -> anyhow::Result<()> {
                 id          INTEGER PRIMARY KEY NOT NULL,
                 desc TEXT                NOT NULL,
                 done        BOOLEAN             NOT NULL DEFAULT 0,
-                expired_at   DATETIME NOT NULL
+                expired_at   DATETIME NOT NULL,
+                admin_id    INTEGER DEFAULT 0
             );"
     ).execute(db_state.pool()).await?;
     for i in 0..10 {
@@ -42,34 +61,47 @@ async fn main() -> anyhow::Result<()> {
         println!("ok");
     }
 
-    let mut u1 = User::query().fetch_one().await?;
-    let mut u1 = u1.clone().with_lock(|tx| Box::pin(async move {
-        u1.set_desc2("with_lock1".to_string());
-        u1.save_with_executor(&mut *tx).await?;
-        Ok(Some(u1))
-    })).await?.unwrap();
-    println!("{:?}", u1);
 
-    let tx = User::transaction_start().await?;
-    let u1 = User::transaction_auto_commit(|tx| Box::pin(async move {
-        u1.lock_self_with_executor(tx).await?;
-        u1.set_desc2("with_lock1".to_string());
-        u1.save_with_executor(&mut *tx).await?;
-        Ok(Some(u1))
-    }), tx).await?.unwrap();
-    println!("{:?}", u1);
+    let u1 = User::query().fetch_one().await?;
 
-    let mut u1 = User::query().fetch_one().await?;
-    let u1 = User::with_transaction(|tx| Box::pin(async move {
-        u1.lock_self_with_executor(tx).await?;
-        let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
-        u1.set_desc2("tx1".to_string());
-        u2.set_desc2("tx2".to_string());
-        u1.save_with_executor(&mut *tx).await?;
-        u2.save_with_executor(&mut *tx).await?;
-        Ok(Some(u1))
-    })).await?.unwrap();
-    println!("{:?}", u1);
+    println!("-{}", u1.role_admins()?.to_sql_string()?);
+    println!("={}", User::role_admins_join_string());
+
+    println!("-{}", u1.roles()?.to_sql_string()?);
+    println!("={}", User::roles_join_string());
+    // println!("={}", User::order_shop_products_join_string());
+    // println!("-{}", User::order_shops_join_string());
+    // println!("-{}", u1.wallet()?.to_sql_string()?);
+    // println!("-{}", u1.admin()?.to_sql_string()?);
+
+    // let mut u1 = User::query().fetch_one().await?;
+    // let mut u1 = u1.clone().with_lock(|tx| Box::pin(async move {
+    //     u1.set_desc2("with_lock1".to_string());
+    //     u1.save_with_executor(&mut *tx).await?;
+    //     Ok(Some(u1))
+    // })).await?.unwrap();
+    // println!("{:?}", u1);
+    //
+    // let tx = User::transaction_start().await?;
+    // let u1 = User::transaction_auto_commit(|tx| Box::pin(async move {
+    //     u1.lock_self_with_executor(tx).await?;
+    //     u1.set_desc2("with_lock1".to_string());
+    //     u1.save_with_executor(&mut *tx).await?;
+    //     Ok(Some(u1))
+    // }), tx).await?.unwrap();
+    // println!("{:?}", u1);
+    //
+    // let mut u1 = User::query().fetch_one().await?;
+    // let u1 = User::with_transaction(|tx| Box::pin(async move {
+    //     u1.lock_self_with_executor(tx).await?;
+    //     let mut u2 = User::query().fetch_last_with_executor(&mut *tx).await?;
+    //     u1.set_desc2("tx1".to_string());
+    //     u2.set_desc2("tx2".to_string());
+    //     u1.save_with_executor(&mut *tx).await?;
+    //     u2.save_with_executor(&mut *tx).await?;
+    //     Ok(Some(u1))
+    // })).await?.unwrap();
+    // println!("{:?}", u1);
 
     //
     // let u1 = User::query().fetch_one().await?;

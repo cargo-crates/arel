@@ -114,21 +114,42 @@ impl Sql {
         Ok(query)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn fetch_one<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyRow>
+    pub(crate) async fn fetch_one_with_executor<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyRow>
     where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         Ok(self.get_sqlx_query()?.fetch_one(executor).await?)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn fetch_all<'c, E>(&self, executor: E) -> anyhow::Result<Vec<sqlx::any::AnyRow>>
+    pub(crate) async fn fetch_one(&self) -> anyhow::Result<sqlx::any::AnyRow> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_one_with_executor(db_state.pool()).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    pub(crate) async fn fetch_all_with_executor<'c, E>(&self, executor: E) -> anyhow::Result<Vec<sqlx::any::AnyRow>>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         Ok(self.get_sqlx_query()?.fetch_all(executor).await?)
     }
     #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
-    pub(crate) async fn execute<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
+    pub(crate) async fn fetch_all(&self) -> anyhow::Result<Vec<sqlx::any::AnyRow>> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.fetch_all_with_executor(db_state.pool()).await
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    pub(crate) async fn execute_with_executor<'c, E>(&self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         Ok(self.get_sqlx_query()?.execute(executor).await?)
+    }
+    #[cfg(any(feature = "sqlite", feature = "mysql", feature = "postgres", feature = "mssql"))]
+    pub(crate) async fn execute(&self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
+        let db_state = crate::visitors::get_db_state()?;
+        self.execute_with_executor(db_state.pool()).await
+    }
+}
+
+impl From<Sql> for String {
+    fn from(sql: Sql) -> Self {
+        sql.to_sql_string().unwrap()
     }
 }

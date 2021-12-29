@@ -1,14 +1,14 @@
 mod persisted_record_struct;
 
-use crate::arel::generators::{fields_generator, functions_generator};
+use crate::arel::generators::{fields_generator, functions_generator, associations_generator};
 use expansion::helpers::{self, DeriveInputHelper};
 use syn::{AttributeArgs, spanned::Spanned};
 // use syn::{parse_quote};
 
 pub fn generate(derive_input_helper: &DeriveInputHelper, args: &AttributeArgs) -> syn::Result<proc_macro2::TokenStream> {
     let mut final_token_stream = proc_macro2::TokenStream::new();
-    final_token_stream.extend(persisted_record_struct::generate(derive_input_helper, args));
-    final_token_stream.extend(generate_struct(derive_input_helper, args));
+    final_token_stream.extend(persisted_record_struct::generate(derive_input_helper, args)?);
+    final_token_stream.extend(generate_struct(derive_input_helper, args)?);
     Ok(final_token_stream)
 }
 
@@ -30,6 +30,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
     let builder_functions_def_of_getters = functions_generator::accessor::generate_struct_functions_define_of_getters(derive_input_helper)?;
     let builder_functions_def_of_setters = functions_generator::accessor::generate_struct_functions_define_of_setters(derive_input_helper)?;
     let builder_functions_def_of_validates = functions_generator::validator::generate_struct_functions_define_of_validates(derive_input_helper)?;
+    let builder_functions_def_of_associations = associations_generator::generate_associations(derive_input_helper, args)?;
     // let builder_functions_def = functions_generator::generate_struct_functions_define(derive_input_helper)?;
     let builder_impl_arel_functions_def = functions_generator::generate_struct_impl_arel_functions_define(derive_input_helper, args)?;
 
@@ -125,12 +126,27 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 let primary_attr_key = Self::table_column_name_to_attr_name(Self::primary_key())?;
                 let primary_attr_key_value = self.persisted_attr_json(primary_attr_key);
 
-                if let std::option::Option::Some(json) = self.changed_attrs_json()? {
-                    if let Some(primary_attr_key_value) = primary_attr_key_value {
-                        let mut where_clause = arel::serde_json::Map::new();
-                        where_clause.insert(primary_key.to_string(), primary_attr_key_value);
-                        Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute_with_executor(executor).await?;
+                let mut where_clause = arel::serde_json::Map::new();
+                // locking_column
+                let mut exists_locking_column = false;
+                if let std::option::Option::Some(locking_column) = Self::locking_column() {
+                    exists_locking_column = true;
+                    if let std::option::Option::Some(current_locking_version) = self.get_persisted_locking_column_attr_value()? {
+                        where_clause.insert(locking_column.to_string(), arel::serde_json::json!(current_locking_version));
+                        self.set_locking_column_attr_value(current_locking_version + 1)?;
                     } else {
+                        self.set_locking_column_attr_value(0)?;
+                    }
+                }
+
+                if let std::option::Option::Some(json) = self.changed_attrs_json()? { // update
+                    if let Some(primary_attr_key_value) = primary_attr_key_value {
+                        where_clause.insert(primary_key.to_string(), primary_attr_key_value);
+                        let ret = Self::update_all(json).r#where(arel::serde_json::Value::Object(where_clause)).execute_with_executor(executor).await?;
+                        if ret.rows_affected() == 0 && exists_locking_column {
+                             return std::result::Result::Err(arel::anyhow::anyhow!("Updated Error: May Exists locking_column version: {:?} Not Match, result: {:?}", self.get_persisted_locking_column_attr_value()?, ret));
+                        }
+                    } else { // create
                         let ret = Self::create(json).execute_with_executor(executor).await?;
                         if let std::option::Option::Some(id) = ret.last_insert_id() {
                             self.#primary_attr_key_ident = std::option::Option::Some(id.try_into()?)
@@ -168,15 +184,24 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
                 self.delete_with_executor(db_state.pool()).await
             }
         }
-        // impl User {}
-        impl #impl_generics #arel_struct_ident #type_generics #where_clause {
-            // pub fn new() -> Self
-            pub fn new() -> Self {
+
+        // impl std::default::Default for User {}
+        impl #impl_generics std::default::Default for #impl_generics #arel_struct_ident #type_generics #where_clause {
+            fn default() -> Self {
                 Self {
                     persisted_row_record: std::option::Option::None,
                     #builder_fields_init_clauses
                 }
             }
+        }
+
+        // impl User {}
+        impl #impl_generics #arel_struct_ident #type_generics #where_clause {
+            // pub fn new() -> Self
+            pub fn new() -> Self {
+                Self::default()
+            }
+            #builder_functions_def_of_associations
             #builder_functions_def_of_getters
             #builder_functions_def_of_setters
             // #builder_functions_def_of_validates

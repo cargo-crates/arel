@@ -12,6 +12,7 @@ pub fn to_sql_string<M: ArelAble, S: StatementAble<M>>(children: &Vec<S>) -> any
 }
 
 #[cfg(test)]
+#[cfg(feature = "mysql")]
 mod tests {
     use crate as arel;
     use arel::prelude::*;
@@ -25,8 +26,8 @@ mod tests {
         }
 
         let wheres = vec![
-            Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false)),
-            Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false)),
+            Where::<User>::new(json!({"profile": null}), r#where::Ops::new(r#where::JoinType::And, false, false, false)),
+            Where::<User>::new(json!(["name = ?", "Tom"]), r#where::Ops::new(r#where::JoinType::And, false, false, false)),
         ];
         assert_eq!(super::to_sql_string(&wheres).unwrap(), "`users`.`profile` IS NULL AND name = 'Tom'");
     }

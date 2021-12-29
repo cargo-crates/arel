@@ -27,8 +27,11 @@ pub fn type_to_pluralize_string<M>() -> String where M: ?Sized {
 /// struct User {
 ///     id: i64,
 /// }
+/// #[cfg(feature = "mysql")]
 /// assert_eq!(table_column_name::<User>("*"), "`users`.*");
+/// #[cfg(feature = "mysql")]
 /// assert_eq!(table_column_name::<User>("age"), "`users`.`age`");
+/// #[cfg(feature = "mysql")]
 /// assert_eq!(table_column_name::<User>("users.name"), "users.name");
 /// ```
 pub fn table_column_name<M: ArelAble>(column_name: &str) -> String {

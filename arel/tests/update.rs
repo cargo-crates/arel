@@ -1,6 +1,5 @@
-
+#[cfg(feature = "mysql")]
 #[cfg(test)]
-#[cfg(not(feature = "sqlite"))]
 mod update {
     use arel::prelude::*;
 
@@ -8,6 +7,7 @@ mod update {
     struct User {
         id: i64,
     }
+
     #[test]
     fn test_update() {
         let sql = User::update_all(json!({"name": "Tom"}))

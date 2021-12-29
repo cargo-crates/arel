@@ -1,13 +1,13 @@
-use arel::prelude::*;
-
-#[arel::arel]
-struct User {
-    id: i64,
-}
-
+#[cfg(feature = "mysql")]
 #[cfg(test)]
 mod delete {
-    use super::*;
+    use arel::prelude::*;
+
+    #[arel::arel]
+    struct User {
+        id: i64,
+    }
+
     #[test]
     fn test_delete() {
         let sql = User::delete_all(json!({

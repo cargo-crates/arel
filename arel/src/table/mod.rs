@@ -69,33 +69,36 @@ impl<M> Table<M> where M: ArelAble {
         self
     }
     pub fn r#where(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, false))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, false, false))
+    }
+    pub fn where_prepare(&mut self, condition: Json) -> &mut Self {
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, false, true))
     }
     pub fn where_not(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, false))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, false, false))
     }
     pub fn where_between(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, true))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, false, true, false))
     }
     pub fn where_not_between(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, true))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::And, true, true, false))
     }
     pub fn where_or(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, false))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, false, false))
     }
     pub fn where_or_not(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, false))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, false, false))
     }
     pub fn where_or_between(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, true))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, false, true, false))
     }
     pub fn where_or_not_between(&mut self, condition: Json) -> &mut Self {
-        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true))
+        self._where_statement(condition, r#where::Ops::new(r#where::JoinType::Or, true, true, false))
     }
     pub fn where_range<T: serde::Serialize>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = r#where::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
-        self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, false, true));
+        self._where_statement(json!(raw_sql), r#where::Ops::new(r#where::JoinType::And, false, true, false));
         self
     }
     pub fn with_select_manager(&mut self) -> &mut Self {
@@ -194,33 +197,33 @@ impl<M> Table<M> where M: ArelAble {
         self
     }
     pub fn having(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, false))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, false, false))
     }
     pub fn having_not(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, false))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, false, false))
     }
     pub fn having_between(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, true))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, false, true, false))
     }
     pub fn having_not_between(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, true))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::And, true, true, false))
     }
     pub fn having_or(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false, false))
     }
     pub fn having_or_not(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, false))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, false, false))
     }
     pub fn having_or_between(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, false, false, false))
     }
     pub fn having_or_not_between(&mut self, condition: Json) -> &mut Self {
-        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, true))
+        self._having_statement(condition, having::Ops::new(r#where::JoinType::Or, true, true, false))
     }
     pub fn having_range<T: serde::Serialize>(&mut self, column_name: &str, range: impl std::ops::RangeBounds<T>) -> &mut Self {
         let table_column_name = methods::table_column_name::<M>(column_name);
         let raw_sql = having::help_range_to_sql(&table_column_name, range).expect("Error: Not Support");
-        self._having_statement(json!(raw_sql), having::Ops::new(r#where::JoinType::And, false, true));
+        self._having_statement(json!(raw_sql), having::Ops::new(r#where::JoinType::And, false, true, false));
         self
     }
     pub fn order(&mut self, condition: Json) -> &mut Self {
@@ -351,7 +354,7 @@ impl<M> Table<M> where M: ArelAble {
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         let sql = self.to_sql()?;
-        let sqlx_row = sql.fetch_one(executor).await?;
+        let sqlx_row = sql.fetch_one_with_executor(executor).await?;
         Ok(M::new_from_db_row(Row::<M>::new(sqlx_row))?)
     }
     pub async fn fetch_one(&mut self) -> anyhow::Result<M> {
@@ -382,7 +385,7 @@ impl<M> Table<M> where M: ArelAble {
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
         let sql = self.to_sql()?;
-        let sqlx_rows = sql.fetch_all(executor).await?;
+        let sqlx_rows = sql.fetch_all_with_executor(executor).await?;
         sqlx_rows.into_iter().map(|sqlx_row| M::new_from_db_row(Row::<M>::new(sqlx_row))).collect()
     }
     pub async fn fetch_all(&mut self) -> anyhow::Result<Vec<M>> {
@@ -392,7 +395,7 @@ impl<M> Table<M> where M: ArelAble {
     pub async fn fetch_count_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<i64>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
-        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one(executor).await?;
+        let sqlx_row: sqlx::any::AnyRow = self.count().to_sql()?.fetch_one_with_executor(executor).await?;
         let row = Row::<M>::new(sqlx_row);
         match row.get_column_value_i64(row.column_names().get(0).ok_or(anyhow::anyhow!("Column is Blank"))?) {
             Ok(count) => Ok(count),
@@ -406,10 +409,16 @@ impl<M> Table<M> where M: ArelAble {
     pub async fn execute_with_executor<'c, E>(&mut self, executor: E) -> anyhow::Result<sqlx::any::AnyQueryResult>
         where E: sqlx::Executor<'c, Database = sqlx::Any>
     {
-        self.to_sql()?.execute(executor).await
+        self.to_sql()?.execute_with_executor(executor).await
     }
     pub async fn execute(&mut self) -> anyhow::Result<sqlx::any::AnyQueryResult> {
         let db_state = crate::visitors::get_db_state()?;
         self.execute_with_executor(db_state.pool()).await
+    }
+}
+
+impl<M: ArelAble> From<Table<M>> for String {
+    fn from(mut table: Table<M>) -> Self {
+        table.to_sql_string().unwrap()
     }
 }
