@@ -9,7 +9,7 @@
 * Install
 ```Cargo.toml
 # features: sqlite|mysql|postgres|mssql
-arel = { version = "*", features = ["sqlite"]}
+arel = { version = "0.1", features = ["sqlite"]}
 ```
 
 * Demo
@@ -289,4 +289,4 @@ println!("{:?}", u1);
 ### Association 
 Supports: `belongs_to`, `has_one`, `has_many`, `has_and_belongs_to_many`
 
-look at [test code](https://github.com/cargo-crates/arel/blob/develop/arel/tests/visitors/sqlite_sqlx/sqlite_sqlx_association.rs)
+look at [test code](https://github.com/cargo-crates/arel/blob/main/arel/tests/visitors/sqlite_sqlx/sqlite_sqlx_association.rs)
