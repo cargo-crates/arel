@@ -43,7 +43,7 @@ pub fn generate(derive_input_helper: &DeriveInputHelper, _args: &AttributeArgs) 
     }
     Ok(quote::quote! {
         // pub struct UserRowRecord{}
-        #[derive(::core::clone::Clone, ::core::fmt::Debug)]
+        #[derive(std::clone::Clone, std::fmt::Debug)]
         pub struct #arel_struct_row_record_ident #type_generics {
             #builder_fields_def
         }

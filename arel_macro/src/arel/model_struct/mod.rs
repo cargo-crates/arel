@@ -60,7 +60,7 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
         // pub struct User {
         //     id: std::option::Option<i64>
         // }
-        #[derive(::core::clone::Clone, ::core::fmt::Debug)]
+        #[derive(std::clone::Clone)]
         pub struct #arel_struct_ident #type_generics {
             persisted_row_record: std::option::Option<#arel_struct_row_record_ident #type_generics>,
             #builder_fields_def
@@ -182,6 +182,16 @@ pub fn generate_struct(derive_input_helper: &DeriveInputHelper, args: &Attribute
             async fn delete(&mut self) -> arel::anyhow::Result<sqlx::any::AnyQueryResult> {
                 let db_state = arel::visitors::get_db_state()?;
                 self.delete_with_executor(db_state.pool()).await
+            }
+        }
+
+        // impl std::fmt::Debug for User {}
+        impl #impl_generics std::fmt::Debug for #impl_generics #arel_struct_ident #type_generics #where_clause {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                let mut string = "{ ".to_string();
+                #(string.push_str(&format!("{}: {:?}, ", stringify!(#idents), self.#idents));)*
+                string.push_str("}");
+                write!(f, "{}", string)
             }
         }
 
