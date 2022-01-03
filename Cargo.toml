@@ -2,5 +2,6 @@
 members = [
     "arel_macro",
     "arel",
-    "example_sqlite"
+    "example_sqlite",
+    "arel_cli"
 ]
