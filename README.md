@@ -8,7 +8,7 @@
 
 * Install
 ```Cargo.toml
-# features: sqlite|mysql|postgres|mssql
+# db features: sqlite|mysql|postgres|mssql
 arel = { version = "0.1", features = ["sqlite"]}
 ```
 
@@ -283,6 +283,8 @@ let u1 = User::with_transaction(|tx| Box::pin(async move {
 })).await?.unwrap();
 println!("{:?}", u1);
 ```
+
+If you wanna support Optimistic Lock please provide [locking_column](https://github.com/cargo-crates/arel/blob/b2185f34f6897f04fb774ccfa58594b2b71fa1f7/arel/tests/visitors/sqlite_sqlx/mod.rs#L4) attribute 
 
 --- 
 
