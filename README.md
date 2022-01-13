@@ -229,6 +229,19 @@ assert_eq!(sql, "INSERT INTO `users` (`age`, `name`) VALUES (18, 'Tom')");
 
 ### Update
 
+<details>
+<summary>increment & decrement</summary>
+
+```rust
+// increment
+let sql = User::table().increment("x", 2).r#where(json!({"id": 1})).to_sql_string().unwrap();
+assert_eq!(sql, "UPDATE `users` SET `users`.`x` = COALESCE(`users`.`x`, 0) + 2 WHERE `users`.`id` = 1");
+// decrement
+let sql = User::table().decrement("x", 2).r#where(json!({"id": 1})).to_sql_string().unwrap();
+assert_eq!(sql, "UPDATE `users` SET `users`.`x` = COALESCE(`users`.`x`, 0) - 2 WHERE `users`.`id` = 1");
+```
+</details>
+
 ```rust
 let sql = User::update_all(json!({
                 "name": "Tom"
@@ -259,7 +272,7 @@ let mut u1 = u1.clone().with_lock(|tx| Box::pin(async move {
     u1.set_desc2("with_lock1".to_string());
     u1.save_with_executor(&mut *tx).await?;
     Ok(Some(u1))
-})).await?.unwrap();
+})).await.unwrap();
 println!("{:?}", u1);
 
 let tx = User::transaction_start().await?;
@@ -268,7 +281,7 @@ let u1 = User::transaction_auto_commit(|tx| Box::pin(async move {
     u1.set_desc2("with_lock1".to_string());
     u1.save_with_executor(&mut *tx).await?;
     Ok(Some(u1))
-}), tx).await?.unwrap();
+}), tx).await.unwrap();
 println!("{:?}", u1);
 
 let mut u1 = User::query().fetch_one().await?;
@@ -280,7 +293,7 @@ let u1 = User::with_transaction(|tx| Box::pin(async move {
     u1.save_with_executor(&mut *tx).await?;
     u2.save_with_executor(&mut *tx).await?;
     Ok(Some(u1))
-})).await?.unwrap();
+})).await.unwrap();
 println!("{:?}", u1);
 ```
 
