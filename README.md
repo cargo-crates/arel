@@ -35,8 +35,8 @@ async fn main() -> anyhow::Result<()> {
     })).await?;
 
     let sql: String = User::query()
-        .r#where(json!({"name": "Tom"}))
-        .r#where(json!(["active = ?", true]))
+        .r#where(json!({"name": "Tom"})) // use .where_prepare can prevent sql injection  (sqlx .bind())
+        .r#where(json!(["active = ?", true])) // can prevent sql injection  (sqlx .bind())
         .where_not(json!({"status": [1, 2, 3]}))
         .where_or(json!({"login": false, "phone": null}))
         .where_between(json!({"age": [18, 35]}))
