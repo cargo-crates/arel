@@ -1,3 +1,7 @@
+Deprecated
+
+please visit new address: https://github.com/rust-china/arel
+---
 # Arel &emsp; 
 [![ci](https://github.com/cargo-crates/arel/workflows/Rust/badge.svg)](https://github.com/cargo-crates/arel/actions)
 [![Latest Version]][crates.io]
