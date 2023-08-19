@@ -1,4 +1,4 @@
-Deprecated
+# Deprecated
 
 please visit new address: https://github.com/rust-china/arel
 ---
